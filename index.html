@@ -406,7 +406,7 @@
             </select>
           </div>
           <div class="field">
-            <label>Time Cost per day (USD/day) <span class="badge">optional</span></label>
+            <label>Vessel Time Cost Per Day (USD/day) <span class="badge">optional</span></label>
             <input type="text" id="opexPerDay" value="0" placeholder="e.g. 15000">
           </div>
           <div class="field">
@@ -638,7 +638,7 @@
         <div class="results" id="results">Fill in the fields and press “Calculate”.</div>
         <div class="btnRow" id="compareActions" style="display:none;">
           <button id="btnApplyOptimal" class="btnTertiary" type="button">Apply optimal to legs</button>
-          <button id="btnRestoreBaseline" class="btnTertiary" type="button">Restore previous (baseline)</button>
+          <button id="btnRestoreBaseline" class="btnTertiary" type="button">Restore previous (user)</button>
         </div>
 
         <div class="note" id="printHint">
@@ -784,7 +784,6 @@
   </div>
 
   <script>
-
 
     /***********************
      * Utilities
@@ -1468,7 +1467,7 @@ function snapshotForm(){
       printRows.push(setPrintRow("Vessel type", vesselType));
       if(jobRef) printRows.push(setPrintRow("Job ref", jobRef));
       printRows.push(setPrintRow("Fuel type", fuelType));
-      printRows.push(setPrintRow("Time Cost per day (USD/day)", fmtUSD(opexPerDay,0)));
+      printRows.push(setPrintRow("Vessel Time Cost Per Day (USD/day)", fmtUSD(opexPerDay,0)));
       printRows.push(setPrintRow("Number of legs", String(legCount)));
       printRows.push(setPrintRow(" ", " ")); // spacer
 
@@ -1519,7 +1518,7 @@ function snapshotForm(){
             <div><strong>Fuel (base):</strong> ${fmt(fuel,2)} MT</div>
             <div><strong>Price:</strong> ${hasPrice ? (fmtUSD(price,0) + " /MT") : "—"}</div>
             <div><strong>Cost (fuel base):</strong> ${hasPrice ? fmtUSD(cost,0) : "—"}</div>
-            <div><strong>Time cost (OPEX):</strong> ${opexPerDay > 0 ? fmtUSD(timeCost,0) : "—"}</div>
+            <div><strong>Time cost (Vessel Time Cost Per Day):</strong> ${opexPerDay > 0 ? fmtUSD(timeCost,0) : "—"}</div>
           </div>
         `);
 
@@ -1533,7 +1532,7 @@ function snapshotForm(){
         printRows.push(setPrintRow(`Leg ${i} fuel (base) (MT)`, fmt(fuel,2)));
         printRows.push(setPrintRow(`Leg ${i} price (USD/MT)`, hasPrice ? (fmtUSD(price,0) + " /MT") : "—"));
         printRows.push(setPrintRow(`Leg ${i} fuel cost (base) (USD)`, hasPrice ? fmtUSD(cost,0) : "—"));
-        printRows.push(setPrintRow(`Leg ${i} time cost (OPEX) (USD)`, opexPerDay > 0 ? fmtUSD(timeCost,0) : "—"));
+        printRows.push(setPrintRow(`Leg ${i} time cost (Vessel Time Cost Per Day) (USD)`, opexPerDay > 0 ? fmtUSD(timeCost,0) : "—"));
         printRows.push(setPrintRow(" ", " "));
       }
 
@@ -1552,7 +1551,7 @@ function snapshotForm(){
         : `<div class="highlight">Total fuel cost (base, USD): ${fmtUSD(totalCostBase,0)} <span style="font-weight:700;opacity:.9;">(partial – missing some leg prices)</span></div>`;
 
       const baseTimeCostBlock = (opexPerDay > 0)
-        ? `<div class="highlight2">Total time cost (OPEX): ${fmtUSD(totalTimeCost,0)} (OPEX/day ${fmtUSD(opexPerDay,0)})</div>`
+        ? `<div class="highlight2">Total time cost (Vessel Time Cost Per Day): ${fmtUSD(totalTimeCost,0)} (Vessel Time Cost Per Day/day ${fmtUSD(opexPerDay,0)})</div>`
         : ``;
 
       const totalEconomicBase = totalCostBase + totalTimeCost;
@@ -1604,7 +1603,7 @@ function snapshotForm(){
       printRows.push(setPrintRow("TOTAL sea time (days)", fmt(totalDays,2)));
       printRows.push(setPrintRow("TOTAL fuel (base) (MT)", fmt(totalFuelBase,2)));
       printRows.push(setPrintRow("TOTAL fuel cost (base) (USD)", allPricesProvided ? fmtUSD(totalCostBase,0) : (fmtUSD(totalCostBase,0) + " (partial)")));
-      printRows.push(setPrintRow("TOTAL time cost (OPEX) (USD)", opexPerDay > 0 ? fmtUSD(totalTimeCost,0) : "—"));
+      printRows.push(setPrintRow("TOTAL time cost (Vessel Time Cost Per Day) (USD)", opexPerDay > 0 ? fmtUSD(totalTimeCost,0) : "—"));
       printRows.push(setPrintRow("TOTAL economic (fuel+time) (USD)", fmtUSD(totalEconomicBase,0)));
 
       printRows.push(setPrintRow("Margin (%) (planning)", fmt(marginPct,1)));
@@ -1761,13 +1760,13 @@ function snapshotForm(){
       box.innerHTML = `
         <div class="compareWrap">
           <div class="compareTitle">
-            <b>Comparison: Current vs Optimal (Fuel cost + Time cost)</b>
-            <span class="badge">OPEX/day used: ${fmtUSD(baseScenario.opex,0)}</span>
+            <b>Comparison: User vs Optimal (Fuel cost + Time cost)</b>
+            <span class="badge">Vessel Time Cost Per Day/day used: ${fmtUSD(baseScenario.opex,0)}</span>
           </div>
 
           <div class="compareGrid">
             <div class="compareBox">
-              <h3>Current (baseline)</h3>
+              <h3>User (as entered)</h3>
               <div class="kv">
                 <div class="k">Total distance (nm)</div><div class="v">${fmt(bT.dist,0)}</div>
                 <div class="k">Sea time (days)</div><div class="v">${fmt(bT.days,2)}</div>
@@ -1792,7 +1791,7 @@ function snapshotForm(){
           </div>
 
           <div class="compareBox" style="margin-top:10px;">
-            <h3>Delta (Optimal - Baseline)</h3>
+            <h3>Difference (Optimal - User)</h3>
             <div class="kv">
               <div class="k">Sea time delta (days)</div><div class="v ${deltaClass(timeDelta)}">${(timeDelta>0?"+":"")}${fmt(timeDelta,2)}</div>
               <div class="k">Fuel delta (MT)</div><div class="v ${deltaClass(fuelDelta)}">${(fuelDelta>0?"+":"")}${fmt(fuelDelta,2)}</div>
@@ -1805,9 +1804,9 @@ function snapshotForm(){
             <thead>
               <tr>
                 <th rowspan="2">Leg</th>
-                <th colspan="5">Baseline</th>
+                <th colspan="5">User</th>
                 <th colspan="5">Optimal</th>
-                <th colspan="3">Delta (Opt - Base)</th>
+                <th colspan="3">Difference (Opt - User)</th>
               </tr>
               <tr>
                 <th class="right">Speed</th>
@@ -2021,255 +2020,6 @@ function snapshotForm(){
 
     init();
 
-  
-
-
-    /***********************
-     * Patch: Robust Save/Load + persist results (Profile v2.1)
-     * - Fixes ReferenceError in exportUIState (missing scenario vars)
-     * - Captures last results HTML
-     * - Handles environments where localStorage is disabled
-     ***********************/
-    var lastBaselineScenario = null;
-    var lastOptimalScenario  = null;
-    var lastResultsHTML      = null;
-
-    // Robust storage helpers (override)
-    const __LS_KEY_PATCH = "ARGUS_IMC_VOYAGE_PROFILES_V3";
-    window.storageAvailable = function(){
-      try{
-        const k = "__argus_test__";
-        localStorage.setItem(k, "1");
-        localStorage.removeItem(k);
-        return true;
-      }catch(e){
-        return false;
-      }
-    };
-
-    window.readAllProfiles = function(){
-      if(!window.storageAvailable()) return { __storageDisabled:true };
-      try{
-        const raw = localStorage.getItem(__LS_KEY_PATCH);
-        if(!raw) return {};
-        const obj = JSON.parse(raw);
-        return (obj && typeof obj === "object") ? obj : {};
-      }catch(e){
-        return {};
-      }
-    };
-
-    window.writeAllProfiles = function(obj){
-      if(!window.storageAvailable()) return { ok:false, err:"Storage disabled" };
-      try{
-        localStorage.setItem(__LS_KEY_PATCH, JSON.stringify(obj || {}));
-        return { ok:true };
-      }catch(e){
-        return { ok:false, err:String(e && e.message ? e.message : e) };
-      }
-    };
-
-    // Capture results after calculations
-    if(typeof window.calc === "function"){
-      const __calc0 = window.calc;
-      window.calc = function(messageHTML){
-        __calc0(messageHTML);
-        try{
-          const box = document.getElementById("results");
-          if(box) lastResultsHTML = box.innerHTML;
-          const actions = document.getElementById("compareActions");
-          if(actions) actions.style.display = "none";
-        }catch(e){}
-      };
-    }
-
-    if(typeof window.renderCompare === "function"){
-      const __renderCompare0 = window.renderCompare;
-      window.renderCompare = function(baseScenario, optScenario){
-        // Store scenarios globally so they can be saved
-        lastBaselineScenario = baseScenario || null;
-        lastOptimalScenario  = optScenario  || null;
-
-        __renderCompare0(baseScenario, optScenario);
-
-        try{
-          const box = document.getElementById("results");
-          if(box) lastResultsHTML = box.innerHTML;
-        }catch(e){}
-      };
-    }
-
-    // Override exportUIState / importUIState to include resultsHTML
-    window.exportUIState = function(){
-      const resultsEl = document.getElementById("results");
-      const hasCompare = !!(resultsEl && resultsEl.querySelector(".compareWrap"));
-      const actions = document.getElementById("compareActions");
-      const compareActionsVisible = actions ? (actions.style.display !== "none") : false;
-
-      // active tab
-      const btn = document.querySelector(".tabBtn.active");
-      const activeTabId = btn ? (btn.getAttribute("data-tab") || "tabVoyage") : "tabVoyage";
-
-      return {
-        activeTabId,
-        resultsMode: hasCompare ? "compare" : "calc",
-        compareActionsVisible,
-        resultsHTML: (lastResultsHTML || (resultsEl ? resultsEl.innerHTML : null)),
-        baselineSnapshot: (typeof window.lastBaselineSnapshot !== "undefined") ? (window.lastBaselineSnapshot || null) : null,
-        optimalSnapshot:  (typeof window.lastOptimalSnapshot  !== "undefined") ? (window.lastOptimalSnapshot  || null) : null,
-        baselineScenario: lastBaselineScenario || null,
-        optimalScenario:  lastOptimalScenario  || null,
-      };
-    };
-
-    window.importUIState = function(state){
-      if(!state) return;
-
-      // restore tab
-      if(state.activeTabId){
-        const btn = document.querySelector(`.tabBtn[data-tab="${state.activeTabId}"]`);
-        if(btn) btn.click();
-      }
-
-      // restore global compare state
-      if(typeof window.lastBaselineSnapshot !== "undefined") window.lastBaselineSnapshot = state.baselineSnapshot || null;
-      if(typeof window.lastOptimalSnapshot  !== "undefined") window.lastOptimalSnapshot  = state.optimalSnapshot  || null;
-      lastBaselineScenario = state.baselineScenario || null;
-      lastOptimalScenario  = state.optimalScenario  || null;
-
-      const actions = document.getElementById("compareActions");
-      if(actions) actions.style.display = state.compareActionsVisible ? "flex" : "none";
-
-      const resultsEl = document.getElementById("results");
-      if(state.resultsMode === "compare" && lastBaselineScenario && lastOptimalScenario){
-        // re-render compare panel (preferred, keeps deltas consistent)
-        if(typeof window.renderCompare === "function"){
-          window.renderCompare(lastBaselineScenario, lastOptimalScenario);
-        }else if(resultsEl && state.resultsHTML){
-          resultsEl.innerHTML = state.resultsHTML;
-        }
-      }else{
-        // Restore last saved calc output if available; otherwise recalc
-        if(resultsEl && state.resultsHTML){
-          resultsEl.innerHTML = state.resultsHTML;
-          lastResultsHTML = state.resultsHTML;
-        }else if(typeof window.calc === "function"){
-          window.calc(`<div class="highlight2">Profile loaded.</div>`);
-        }
-      }
-    };
-
-    // Override refresh list and profile actions with clear messages
-    window.refreshProfileList = function(){
-      const list = document.getElementById("profileList");
-      if(!list) return;
-      const profiles = window.readAllProfiles();
-
-      list.innerHTML = "";
-      if(profiles.__storageDisabled){
-        const op = document.createElement("option");
-        op.value = "";
-        op.textContent = "— Storage disabled (use Export/Import JSON) —";
-        list.appendChild(op);
-        return;
-      }
-
-      const op0 = document.createElement("option");
-      op0.value = "";
-      op0.textContent = "— Select saved profile —";
-      list.appendChild(op0);
-
-      Object.keys(profiles).sort((a,b)=>a.localeCompare(b)).forEach(n=>{
-        const op = document.createElement("option");
-        op.value = n;
-        op.textContent = n;
-        list.appendChild(op);
-      });
-    };
-
-    window.saveProfile = function(){
-      const box = document.getElementById("results");
-      const name = (document.getElementById("profileName")?.value || "").trim();
-      if(!name){
-        if(box) box.innerHTML = `<div class="warn">Please enter a profile name first.</div>`;
-        return;
-      }
-      const profiles = window.readAllProfiles();
-      if(profiles.__storageDisabled){
-        if(box) box.innerHTML = `<div class="warn">Local storage is disabled here. Use “Export JSON” to save a profile file.</div>`;
-        return;
-      }
-
-      // snapshotForm already includes vessel type, legs, tables, and uiState
-      profiles[name] = window.snapshotForm ? window.snapshotForm() : null;
-      const res = window.writeAllProfiles(profiles);
-      if(!res.ok){
-        if(box) box.innerHTML = `<div class="warn">Could not save to local storage (${res.err}). Use “Export JSON”.</div>`;
-        return;
-      }
-      window.refreshProfileList();
-      if(box) box.innerHTML = `<div class="highlight2">Profile saved: <strong>${name}</strong></div>`;
-    };
-
-    window.loadProfile = function(){
-      const box = document.getElementById("results");
-      const name = document.getElementById("profileList")?.value || "";
-      if(!name){
-        if(box) box.innerHTML = `<div class="warn">Select a saved profile to load.</div>`;
-        return;
-      }
-      const profiles = window.readAllProfiles();
-      if(profiles.__storageDisabled){
-        if(box) box.innerHTML = `<div class="warn">Local storage is disabled here. Use “Import JSON” to load a saved profile file.</div>`;
-        return;
-      }
-      if(!profiles[name]){
-        if(box) box.innerHTML = `<div class="warn">Profile not found.</div>`;
-        return;
-      }
-      if(window.applySnapshot) window.applySnapshot(profiles[name]);
-      const pn = document.getElementById("profileName");
-      if(pn) pn.value = name;
-    };
-
-    window.deleteProfile = function(){
-      const box = document.getElementById("results");
-      const name = document.getElementById("profileList")?.value || "";
-      if(!name){
-        if(box) box.innerHTML = `<div class="warn">Select a saved profile to delete.</div>`;
-        return;
-      }
-      const profiles = window.readAllProfiles();
-      if(profiles.__storageDisabled){
-        if(box) box.innerHTML = `<div class="warn">Local storage is disabled here. Cannot delete. Use Export/Import JSON workflow.</div>`;
-        return;
-      }
-      delete profiles[name];
-      const res = window.writeAllProfiles(profiles);
-      if(!res.ok){
-        if(box) box.innerHTML = `<div class="warn">Could not update local storage (${res.err}).</div>`;
-        return;
-      }
-      window.refreshProfileList();
-      if(box) box.innerHTML = `<div class="highlight2">Profile deleted: <strong>${name}</strong></div>`;
-    };
-
-    // Sync global bindings (so existing code calling exportUIState(), readAllProfiles(), etc uses patched versions)
-    try{
-      readAllProfiles = window.readAllProfiles;
-      writeAllProfiles = window.writeAllProfiles;
-      refreshProfileList = window.refreshProfileList;
-      saveProfile = window.saveProfile;
-      loadProfile = window.loadProfile;
-      deleteProfile = window.deleteProfile;
-      exportUIState = window.exportUIState;
-      importUIState = window.importUIState;
-    }catch(e){}
-
-    // After patch, refresh dropdown list
-    try{ window.refreshProfileList(); }catch(e){}
-
-
-</script>
+  </script>
 </body>
 </html>

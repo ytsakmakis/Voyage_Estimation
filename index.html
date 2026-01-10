@@ -1793,9 +1793,9 @@ function snapshotForm(){
           <div class="compareBox" style="margin-top:10px;">
             <h3>Difference (Optimal - User)</h3>
             <div class="kv">
-              <div class="k">Sea time delta (days)</div><div class="v ${deltaClass(timeDelta)}">${(timeDelta>0?"+":"")}${fmt(timeDelta,2)}</div>
-              <div class="k">Fuel delta (MT)</div><div class="v ${deltaClass(fuelDelta)}">${(fuelDelta>0?"+":"")}${fmt(fuelDelta,2)}</div>
-              <div class="k">Economic delta (USD)</div><div class="v ${deltaClass(econDelta)}">${(econDelta>0?"+":"")}${fmtUSD(econDelta,0)}</div>
+              <div class="k"> Sea time (days)</div><div class="v ${deltaClass(timeDelta)}">${(timeDelta>0?"+":"")}${fmt(timeDelta,2)}</div>
+              <div class="k">Fuel (MT)</div><div class="v ${deltaClass(fuelDelta)}">${(fuelDelta>0?"+":"")}${fmt(fuelDelta,2)}</div>
+              <div class="k">Economic (USD)</div><div class="v ${deltaClass(econDelta)}">${(econDelta>0?"+":"")}${fmtUSD(econDelta,0)}</div>
             </div>
             ${pricesNote}
           </div>

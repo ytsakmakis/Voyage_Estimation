@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARGUS IMC – Multi-Leg Voyage Fuel & Cost</title>
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background:#111827;
+      color:#e5e7eb;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      min-height:100vh;
+      margin:0;
+      padding:40px 0;
+    }
+    .card{
+      background:#1f2937;
+      padding:24px 28px;
+      border-radius:12px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.4);
+      width:1060px;
+    }
+    h1{
+      font-size:20px;
+      margin:0 0 6px 0;
+      text-align:center;
+      color:#facc15;
+    }
+    .subtitle{
+      font-size:12px;
+      text-align:center;
+      color:#9ca3af;
+      margin-bottom:18px;
+    }
+    h2{
+      font-size:15px;
+      margin-top:18px;
+      margin-bottom:8px;
+      border-bottom:1px solid #374151;
+      padding-bottom:4px;
+      color:#93c5fd;
+    }
+    label{ display:block; margin-top:8px; font-size:13px; }
+    input, select, textarea{
+      width:100%;
+      padding:7px;
+      margin-top:3px;
+      border-radius:6px;
+      border:1px solid #4b5563;
+      background:#111827;
+      color:#e5e7eb;
+      font-size:13px;
+      outline:none;
+      box-sizing:border-box;
+    }
+    textarea{ resize:vertical; min-height:60px; }
+    .row{ display:flex; gap:10px; }
+    .row .field{ flex:1; }
+
+    /* Leg grids for aligned cells */
+    .legGrid{
+      display:grid;
+      grid-template-columns: 1.0fr 1.0fr 1.2fr 1.2fr 1.3fr 0.9fr; /* Distance, Condition, Speed, Custom, Cons, Price */
+      gap:10px;
+      align-items:end;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .legGrid .field{ flex:unset; min-width:0; }
+    .legGrid input, .legGrid select{ min-width:0; }
+
+    /* Compare panel */
+    .compareWrap{
+      margin-top:12px;
+      border:1px solid #374151;
+      border-radius:12px;
+      background:#030712;
+      padding:12px;
+    }
+    .compareTitle{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .compareTitle b{ color:#e5e7eb; }
+    .compareGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .compareBox{
+      background:#0b1220;
+      border:1px solid #374151;
+      border-radius:10px;
+      padding:10px 12px;
+    }
+    .compareBox h3{
+      margin:0 0 8px 0;
+      font-size:13px;
+      color:#93c5fd;
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 220px 1fr;
+      gap:6px 10px;
+      font-size:12.5px;
+      align-items:baseline;
+    }
+    .kv .k{ color:#d1d5db; font-weight:700; }
+    .kv .v{ color:#e5e7eb; text-align:right; }
+    .compareTable{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12.5px;
+      margin-top:10px;
+    }
+    .compareTable th, .compareTable td{
+      border-bottom:1px solid #374151;
+      padding:7px 6px;
+      vertical-align:middle;
+    }
+    .compareTable th{
+      color:#93c5fd;
+      font-weight:800;
+      text-align:left;
+      white-space:nowrap;
+    }
+    .compareTable td{ color:#e5e7eb; }
+    .right{ text-align:right; }
+    .deltaPos{ color:#86efac; font-weight:800; }
+    .deltaNeg{ color:#fca5a5; font-weight:800; }
+    .muted{ color:#9ca3af; }
+
+    @media (max-width: 1100px){
+      .legGrid{
+        grid-template-columns: repeat(2, minmax(240px, 1fr));
+      }
+      .compareGrid{
+        grid-template-columns: 1fr;
+      }
+      .kv{
+        grid-template-columns: 170px 1fr;
+      }
+    }
+
+    /* Tabs */
+    .tabs{
+      display:flex;
+      gap:10px;
+      margin:8px 0 14px 0;
+      border-bottom:1px solid #374151;
+      padding-bottom:10px;
+      flex-wrap:wrap;
+    }
+    .tabBtn{
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid #374151;
+      background:#111827;
+      color:#d1d5db;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:700;
+    }
+    .tabBtn.active{
+      background:#0b1220;
+      color:#93c5fd;
+      border-color:#60a5fa;
+    }
+    .tabContent{ display:none; }
+    .tabContent.active{ display:block; }
+
+    .legCard{
+      background:#0b1220;
+      overflow:hidden;
+      border:1px solid #374151;
+      border-radius:10px;
+      padding:12px 12px 14px 12px;
+      margin-top:10px;
+    }
+    .legTitle{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:6px;
+    }
+    .legTitle b{ color:#e5e7eb; }
+    .badge{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      background:#111827;
+      border:1px solid #374151;
+      font-size:12px;
+      color:#d1d5db;
+      white-space:nowrap;
+    }
+
+    .btnRow{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+    button{
+      padding:9px 12px;
+      border:none;
+      border-radius:8px;
+      font-size:14px;
+      cursor:pointer;
+      background:#10b981;
+      color:#111827;
+      font-weight:bold;
+    }
+    button:hover{ opacity:0.92; }
+    .btnSecondary{ background:#6b7280; color:#f9fafb; }
+    .btnTertiary{ background:#111827; color:#e5e7eb; border:1px solid #374151; }
+    .btnDanger{ background:#ef4444; color:#111827; }
+
+    .results{
+      margin-top:12px;
+      font-size:13px;
+      line-height:1.55;
+      background:#030712;
+      border-radius:8px;
+      padding:10px 12px;
+      border:1px solid #374151;
+    }
+    hr{ border:none; border-top:1px solid #374151; margin:12px 0; }
+
+    .highlight{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#0b3b2e;
+      border:1px solid #34d399;
+      color:#d1fae5;
+      font-weight:bold;
+      font-size:14px;
+    }
+    .highlight2{
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#0b1220;
+      border:1px solid #374151;
+      color:#e5e7eb;
+      font-weight:bold;
+      font-size:13px;
+    }
+    .warn{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#3b1b1b;
+      border:1px solid #f87171;
+      color:#fee2e2;
+      font-weight:bold;
+      font-size:13px;
+    }
+    .note{ margin-top:10px; font-size:11px; color:#9ca3af; }
+    .error{ color:#f97373; font-weight:bold; }
+
+    /* Consumption table editor */
+    .tableWrap{
+      background:#0b1220;
+      border:1px solid #374151;
+      border-radius:10px;
+      padding:12px;
+      margin-top:10px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+    th, td{
+      border-bottom:1px solid #374151;
+      padding:8px 6px;
+      text-align:left;
+      vertical-align:middle;
+    }
+    th{ color:#93c5fd; font-weight:700; }
+    td input{
+      margin-top:0;
+      padding:6px;
+    }
+    .tableActions{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .pill{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid #374151;
+      background:#111827;
+      font-size:12px;
+      color:#d1d5db;
+      margin-left:6px;
+    }
+
+    /* ===== PRINT SUMMARY (ALIGNED CELLS) ===== */
+    .no-print { display:block; }
+    .print-only { display:none; }
+
+    .print-summary{
+      margin-top: 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 12px 14px;
+      background:#ffffff;
+      color:#111827;
+    }
+    .print-grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      row-gap: 8px;
+      column-gap: 14px;
+      align-items: baseline;
+      font-size: 12.5px;
+    }
+    .print-grid .k{ font-weight:700; color:#111827; }
+    .print-grid .v{
+      color:#111827;
+      border-bottom: 1px dotted #9ca3af;
+      padding-bottom: 2px;
+      white-space:pre-wrap;
+    }
+
+    @media print{
+      body{ background:#ffffff; padding:0; }
+      .card{
+        width:100%;
+        box-shadow:none;
+        border-radius:0;
+        background:#ffffff;
+        color:#111827;
+      }
+      h1{ color:#111827; }
+      .subtitle{ color:#374151; }
+      h2{ color:#111827; border-bottom:1px solid #e5e7eb; }
+
+      .no-print{ display:none !important; }
+      .print-only{ display:block !important; }
+
+      .results, .note#printHint{ display:none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>ARGUS IMC – Multi-Leg Voyage Fuel & Cost</h1>
+    <div class="subtitle">Base fuel & base cost per leg • Speed/Consumption lookup • Optimal speed (Fuel vs Time)</div>
+
+    <!-- ===================== ON-SCREEN FORM (NOT PRINTED) ===================== -->
+    <div class="no-print" id="formBlock">
+
+      <div class="tabs">
+        <button class="tabBtn active" data-tab="tabVoyage" type="button">Voyage</button>
+        <button class="tabBtn" data-tab="tabCons" type="button">Speed / Consumption table</button>
+      </div>
+
+      <!-- ===================== TAB: VOYAGE ===================== -->
+      <div class="tabContent active" id="tabVoyage">
+        <h2>General</h2>
+
+        <div class="row">
+          <div class="field">
+            <label>Vessel name</label>
+            <input type="text" id="vesselName" placeholder="e.g. AHTS Apollo Z">
+          </div>
+          <div class="field">
+            <label>Vessel type</label>
+            <select id="vesselType">
+              <option value="Cargo vessel" selected>Cargo vessel</option>
+              <option value="Tanker">Tanker</option>
+              <option value="AHTS">AHTS</option>
+              <option value="Tug">Tug</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Voyage No. (optional)</label>
+            <input type="text" id="jobRef" placeholder="e.g. 001.2026.Light">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Fuel type</label>
+            <select id="fuelType">
+              <option value="MGO" selected>MGO</option>
+              <option value="VLSFO">VLSFO</option>
+              <option value="HFO">HFO</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Time Cost per day (USD/day) <span class="badge">optional</span></label>
+            <input type="text" id="opexPerDay" value="0" placeholder="e.g. 15000">
+          </div>
+          <div class="field">
+            <label>Number of legs</label>
+            <select id="legCount">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <div class="field">
+            <label>Profile (Save / Load)</label>
+            <div class="row">
+              <div class="field">
+                <input type="text" id="profileName" placeholder="profile name (e.g. AHTS Apollo Z)" />
+              </div>
+              <div class="field">
+                <select id="profileList"></select>
+              </div>
+            </div>
+            <div class="btnRow" style="margin-top:8px;">
+              <button class="btnTertiary" id="btnSaveProfile" type="button">Save profile</button>
+              <button class="btnTertiary" id="btnLoadProfile" type="button">Load</button>
+              <button class="btnDanger" id="btnDeleteProfile" type="button">Delete</button>
+              <button class="btnSecondary" id="btnExport" type="button">Export JSON</button>
+              <label style="flex:1; margin:0;">
+                <span class="badge" style="display:inline-block; margin-bottom:6px;">Import JSON</span>
+                <input type="file" id="importFile" accept="application/json" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <h2>Legs</h2>
+
+        <!-- LEG 1..5 (shown/hidden by selector, values remain) -->
+        <div class="legCard" id="leg1">
+          <div class="legTitle"><b>Leg 1</b><span class="badge">Distance / Condition / Speed / Cons / Price</span></div>
+          <div class="row">
+            <div class="field"><label>From</label><input type="text" id="leg1_from" placeholder="e.g. POINTE NOIRE"></div>
+            <div class="field"><label>To</label><input type="text" id="leg1_to" placeholder="e.g. PORT GENTIL"></div>
+          </div>
+
+          <div class="legGrid">
+            <div class="field"><label>Distance (nm)</label><input type="text" id="leg1_dist" value="0"></div>
+
+            <div class="field legCondField"><label>Condition</label>
+              <select id="leg1_cond">
+                <option value="Light" selected>Light</option>
+                <option value="Towing">Towing</option>
+              </select>
+            </div>
+
+            <div class="field"><label>Speed (kn) <span class="pill">from table</span></label>
+              <select id="leg1_speedSel"></select>
+            </div>
+
+            <div class="field"><label>Custom speed (kn) <span class="badge">if Manual</span></label>
+              <input type="text" id="leg1_speed" value="10.0">
+            </div>
+
+            <div class="field"><label>Daily consumption (MT/day)</label><input type="text" id="leg1_cons" value="0"></div>
+
+            <div class="field"><label>Price (USD/MT)</label><input type="text" id="leg1_price" value="0"></div>
+          </div>
+
+          <div class="note" id="leg1_hint"></div>
+        </div>
+
+        <div class="legCard" id="leg2">
+          <div class="legTitle"><b>Leg 2</b><span class="badge">Distance / Condition / Speed / Cons / Price</span></div>
+          <div class="row">
+            <div class="field"><label>From</label><input type="text" id="leg2_from"></div>
+            <div class="field"><label>To</label><input type="text" id="leg2_to"></div>
+          </div>
+
+          <div class="legGrid">
+            <div class="field"><label>Distance (nm)</label><input type="text" id="leg2_dist" value="0"></div>
+
+            <div class="field legCondField"><label>Condition</label>
+              <select id="leg2_cond">
+                <option value="Light" selected>Light</option>
+                <option value="Towing">Towing</option>
+              </select>
+            </div>
+
+            <div class="field"><label>Speed (kn) <span class="pill">from table</span></label>
+              <select id="leg2_speedSel"></select>
+            </div>
+
+            <div class="field"><label>Custom speed (kn) <span class="badge">if Manual</span></label>
+              <input type="text" id="leg2_speed" value="10.0">
+            </div>
+
+            <div class="field"><label>Daily consumption (MT/day)</label><input type="text" id="leg2_cons" value="0"></div>
+
+            <div class="field"><label>Price (USD/MT)</label><input type="text" id="leg2_price" value="0"></div>
+          </div>
+
+          <div class="note" id="leg2_hint"></div>
+        </div>
+
+        <div class="legCard" id="leg3">
+          <div class="legTitle"><b>Leg 3</b><span class="badge">Distance / Condition / Speed / Cons / Price</span></div>
+          <div class="row">
+            <div class="field"><label>From</label><input type="text" id="leg3_from"></div>
+            <div class="field"><label>To</label><input type="text" id="leg3_to"></div>
+          </div>
+
+          <div class="legGrid">
+            <div class="field"><label>Distance (nm)</label><input type="text" id="leg3_dist" value="0"></div>
+
+            <div class="field legCondField"><label>Condition</label>
+              <select id="leg3_cond">
+                <option value="Light" selected>Light</option>
+                <option value="Towing">Towing</option>
+              </select>
+            </div>
+
+            <div class="field"><label>Speed (kn) <span class="pill">from table</span></label>
+              <select id="leg3_speedSel"></select>
+            </div>
+
+            <div class="field"><label>Custom speed (kn) <span class="badge">if Manual</span></label>
+              <input type="text" id="leg3_speed" value="10.0">
+            </div>
+
+            <div class="field"><label>Daily consumption (MT/day)</label><input type="text" id="leg3_cons" value="0"></div>
+
+            <div class="field"><label>Price (USD/MT)</label><input type="text" id="leg3_price" value="0"></div>
+          </div>
+
+          <div class="note" id="leg3_hint"></div>
+        </div>
+
+        <div class="legCard" id="leg4">
+          <div class="legTitle"><b>Leg 4</b><span class="badge">Distance / Condition / Speed / Cons / Price</span></div>
+          <div class="row">
+            <div class="field"><label>From</label><input type="text" id="leg4_from"></div>
+            <div class="field"><label>To</label><input type="text" id="leg4_to"></div>
+          </div>
+
+          <div class="legGrid">
+            <div class="field"><label>Distance (nm)</label><input type="text" id="leg4_dist" value="0"></div>
+
+            <div class="field legCondField"><label>Condition</label>
+              <select id="leg4_cond">
+                <option value="Light" selected>Light</option>
+                <option value="Towing">Towing</option>
+              </select>
+            </div>
+
+            <div class="field"><label>Speed (kn) <span class="pill">from table</span></label>
+              <select id="leg4_speedSel"></select>
+            </div>
+
+            <div class="field"><label>Custom speed (kn) <span class="badge">if Manual</span></label>
+              <input type="text" id="leg4_speed" value="10.0">
+            </div>
+
+            <div class="field"><label>Daily consumption (MT/day)</label><input type="text" id="leg4_cons" value="0"></div>
+
+            <div class="field"><label>Price (USD/MT)</label><input type="text" id="leg4_price" value="0"></div>
+          </div>
+
+          <div class="note" id="leg4_hint"></div>
+        </div>
+
+        <div class="legCard" id="leg5">
+          <div class="legTitle"><b>Leg 5</b><span class="badge">Distance / Condition / Speed / Cons / Price</span></div>
+          <div class="row">
+            <div class="field"><label>From</label><input type="text" id="leg5_from"></div>
+            <div class="field"><label>To</label><input type="text" id="leg5_to"></div>
+          </div>
+
+          <div class="legGrid">
+            <div class="field"><label>Distance (nm)</label><input type="text" id="leg5_dist" value="0"></div>
+
+            <div class="field legCondField"><label>Condition</label>
+              <select id="leg5_cond">
+                <option value="Light" selected>Light</option>
+                <option value="Towing">Towing</option>
+              </select>
+            </div>
+
+            <div class="field"><label>Speed (kn) <span class="pill">from table</span></label>
+              <select id="leg5_speedSel"></select>
+            </div>
+
+            <div class="field"><label>Custom speed (kn) <span class="badge">if Manual</span></label>
+              <input type="text" id="leg5_speed" value="10.0">
+            </div>
+
+            <div class="field"><label>Daily consumption (MT/day)</label><input type="text" id="leg5_cons" value="0"></div>
+
+            <div class="field"><label>Price (USD/MT)</label><input type="text" id="leg5_price" value="0"></div>
+          </div>
+
+          <div class="note" id="leg5_hint"></div>
+        </div>
+
+        <h2>Planning only (optional)</h2>
+        <div class="row">
+          <div class="field">
+            <label>Margin (%) <span class="badge">planning fuel only</span></label>
+            <input type="text" id="marginPct" value="0" placeholder="e.g. 20">
+          </div>
+          <div class="field">
+            <label>Fuel on board at start (MT) <span class="badge">optional</span></label>
+            <input type="text" id="startFuel" value="0" placeholder="e.g. 85">
+          </div>
+          <div class="field">
+            <label>Required reserve on arrival (MT) <span class="badge">optional</span></label>
+            <input type="text" id="reserveFuel" value="0" placeholder="e.g. 10">
+          </div>
+        </div>
+
+        <div class="btnRow">
+          <button id="btnCalc" type="button">Calculate</button>
+          <button id="btnOptimal" class="btnTertiary" type="button">Calculate optimal speed / consumption</button>
+          <button id="btnPrint" class="btnSecondary" type="button">Print / Save as PDF</button>
+        </div>
+
+        <div class="results" id="results">Fill in the fields and press “Calculate”.</div>
+        <div class="btnRow" id="compareActions" style="display:none;">
+          <button id="btnApplyOptimal" class="btnTertiary" type="button">Apply optimal to legs</button>
+          <button id="btnRestoreBaseline" class="btnTertiary" type="button">Restore previous (baseline)</button>
+        </div>
+
+        <div class="note" id="printHint">
+          Tip: decimals “.” or “,” (e.g. 10,5). Thousands separators OK (e.g. 6,000).
+        </div>
+      </div>
+
+      <!-- ===================== TAB: SPEED / CONSUMPTION TABLE ===================== -->
+      <div class="tabContent" id="tabCons">
+        <h2>Speed / Consumption table <span class="badge">user editable</span></h2>
+        <div class="note">
+          Add your vessel performance points (Speed kn → Daily consumption MT/day). In legs, the speed dropdown will be populated from here.
+          For AHTS/Tug: keep separate tables for <b>Light</b> and <b>Towing</b>. For Cargo/Tanker: keep separate tables for <b>Ballast</b> and <b>Laden</b>.
+        </div>
+
+        <div id="singleTableBlock">
+          <div class="tableWrap">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <div style="font-weight:800;color:#e5e7eb;">Table: Standard / Light</div>
+              <div class="badge">Speeds must be unique</div>
+            </div>
+            <table id="tbl_normal">
+              <thead>
+                <tr><th style="width:200px;">Speed (kn)</th><th>Daily consumption (MT/day)</th><th style="width:120px;">Action</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div class="tableActions">
+              <button class="btnTertiary" type="button" data-addrow="normal">+ Add row</button>
+              <button class="btnTertiary" type="button" data-sort="normal">Sort by speed</button>
+              <button class="btnDanger" type="button" data-clear="normal">Clear</button>
+              <button class="btnSecondary" type="button" data-seed="normal">Seed example</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="dualAHTSBlock" style="display:none;">
+          <div class="row">
+            <div class="field">
+              <div class="tableWrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <div style="font-weight:800;color:#e5e7eb;">Table: Light condition</div>
+                  <div class="badge">Speeds must be unique</div>
+                </div>
+                <table id="tbl_light">
+                  <thead>
+                    <tr><th style="width:200px;">Speed (kn)</th><th>Daily consumption (MT/day)</th><th style="width:120px;">Action</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <div class="tableActions">
+                  <button class="btnTertiary" type="button" data-addrow="light">+ Add row</button>
+                  <button class="btnTertiary" type="button" data-sort="light">Sort by speed</button>
+                  <button class="btnDanger" type="button" data-clear="light">Clear</button>
+                  <button class="btnSecondary" type="button" data-seed="light">Seed example</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="tableWrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <div style="font-weight:800;color:#e5e7eb;">Table: Towing condition</div>
+                  <div class="badge">Speeds must be unique</div>
+                </div>
+                <table id="tbl_towing">
+                  <thead>
+                    <tr><th style="width:200px;">Speed (kn)</th><th>Daily consumption (MT/day)</th><th style="width:120px;">Action</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <div class="tableActions">
+                  <button class="btnTertiary" type="button" data-addrow="towing">+ Add row</button>
+                  <button class="btnTertiary" type="button" data-sort="towing">Sort by speed</button>
+                  <button class="btnDanger" type="button" data-clear="towing">Clear</button>
+                  <button class="btnSecondary" type="button" data-seed="towing">Seed example</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <div id="dualCargoBlock" style="display:none;">
+          <div class="row">
+            <div class="field">
+              <div class="tableWrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <div style="font-weight:800;color:#e5e7eb;">Table: Ballast condition</div>
+                  <div class="badge">Speeds must be unique</div>
+                </div>
+                <table id="tbl_ballast">
+                  <thead>
+                    <tr><th style="width:200px;">Speed (kn)</th><th>Daily consumption (MT/day)</th><th style="width:120px;">Action</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <div class="tableActions">
+                  <button class="btnTertiary" type="button" data-addrow="ballast">+ Add row</button>
+                  <button class="btnTertiary" type="button" data-sort="ballast">Sort by speed</button>
+                  <button class="btnDanger" type="button" data-clear="ballast">Clear</button>
+                  <button class="btnSecondary" type="button" data-seed="ballast">Seed example</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="tableWrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <div style="font-weight:800;color:#e5e7eb;">Table: Laden condition</div>
+                  <div class="badge">Speeds must be unique</div>
+                </div>
+                <table id="tbl_laden">
+                  <thead>
+                    <tr><th style="width:200px;">Speed (kn)</th><th>Daily consumption (MT/day)</th><th style="width:120px;">Action</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <div class="tableActions">
+                  <button class="btnTertiary" type="button" data-addrow="laden">+ Add row</button>
+                  <button class="btnTertiary" type="button" data-sort="laden">Sort by speed</button>
+                  <button class="btnDanger" type="button" data-clear="laden">Clear</button>
+                  <button class="btnSecondary" type="button" data-seed="laden">Seed example</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+<div class="note">
+          ⚙️ Logic: If you pick a speed from dropdown, the leg consumption auto-fills from the table. If you choose <b>Manual</b>, you can type both speed & consumption.
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== PRINT-ONLY SUMMARY (ALIGNED) ===================== -->
+    <div class="print-only print-summary" id="printSummary">
+      <h2 style="margin-top:0;">Voyage Summary</h2>
+      <div class="print-grid" id="printGrid"></div>
+      <div style="margin-top:10px;font-size:11px;color:#374151;">
+        Generated by ARGUS IMC – Multi-Leg Voyage Fuel & Cost
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+
+    /***********************
+     * Utilities
+     ***********************/
+    // Number parsing:
+    // - "10.5"
+    // - "10,5"  (decimal comma)
+    // - "6,000" (thousands)
+    // - "6 000" (spaces)
+    function toNumberFromValue(v){
+      let s = (v ?? "").toString().trim();
+      if(!s) return 0;
+      s = s.replace(/\s+/g, "");
+      const hasComma = s.includes(",");
+      const hasDot   = s.includes(".");
+      if(hasComma && hasDot){
+        s = s.replace(/,/g, "");
+      }else if(hasComma && !hasDot){
+        s = s.replace(/,/g, ".");
+      }
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function toNumber(id){
+      const el = document.getElementById(id);
+      if(!el) return 0;
+      return toNumberFromValue(el.value);
+    }
+
+    function safeText(id){
+      const el = document.getElementById(id);
+      return (el && el.value) ? el.value.trim() : "";
+    }
+
+    function fmt(value, decimals=2){
+      return new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      }).format(value);
+    }
+
+    function fmtUSD(value, decimals=0){
+      return "$" + new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      }).format(value);
+    }
+
+    function setPrintRow(label, value){
+      return `<div class="k">${label}</div><div class="v">${value}</div>`;
+    }
+
+    function setLegVisible(count){
+      for(let i=1;i<=5;i++){
+        const el = document.getElementById("leg"+i);
+        if(!el) continue;
+        el.style.display = (i <= count) ? "block" : "none";
+      }
+    }
+
+    function fillPrintSummary(rows){
+      const grid = document.getElementById("printGrid");
+      if(!grid) return;
+      grid.innerHTML = rows.join("");
+    }
+
+    function isAHTSType(){
+      const t = safeText("vesselType");
+      return (t === "AHTS" || t === "Tug");
+    }
+
+    function isCargoType(){
+      const t = safeText("vesselType");
+      return (t === "Cargo vessel" || t === "Tanker");
+    }
+
+    function defaultCondition(){
+      return isAHTSType() ? "Light" : "Ballast";
+    }
+
+    function tableKindForLeg(i){
+      const cond = safeText(`leg${i}_cond`) || defaultCondition();
+      if(isAHTSType()){
+        return (cond === "Towing") ? "towing" : "light";
+      }
+      return (cond === "Laden") ? "laden" : "ballast";
+    }
+
+    /***********************
+     * Consumption tables (DOM-driven)
+     ***********************/
+    function getTableElement(kind){
+      const map = {
+        normal:  "tbl_normal",
+        light:   "tbl_light",
+        towing:  "tbl_towing",
+        ballast: "tbl_ballast",
+        laden:   "tbl_laden",
+      };
+      const id = map[kind];
+      return id ? document.getElementById(id) : null;
+    }
+
+    function readConsTable(kind){
+      const tbl = getTableElement(kind);
+      if(!tbl) return [];
+      const rows = Array.from(tbl.querySelectorAll("tbody tr"));
+      const points = rows.map(r => {
+        const s = toNumberFromValue(r.querySelector("input[data-col='speed']")?.value);
+        const c = toNumberFromValue(r.querySelector("input[data-col='cons']")?.value);
+        return { speed:s, cons:c };
+      }).filter(p => p.speed > 0 && p.cons > 0);
+
+      // unique by speed (last wins)
+      const by = new Map();
+      points.forEach(p => by.set(p.speed, p.cons));
+      const uniq = Array.from(by.entries()).map(([speed, cons]) => ({ speed, cons }));
+      uniq.sort((a,b) => a.speed - b.speed);
+      return uniq;
+    }
+
+    function renderConsTable(kind, points){
+      const tbl = getTableElement(kind);
+      if(!tbl) return;
+      const tb = tbl.querySelector("tbody");
+      tb.innerHTML = "";
+      (points || []).forEach(p => addConsRow(kind, p.speed, p.cons));
+    }
+
+    function addConsRow(kind, speed="", cons=""){
+      const tbl = getTableElement(kind);
+      if(!tbl) return;
+      const tb = tbl.querySelector("tbody");
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input data-col="speed" type="text" value="${speed}"></td>
+        <td><input data-col="cons" type="text" value="${cons}"></td>
+        <td><button class="btnDanger" type="button" data-delrow="1">Remove</button></td>
+      `;
+      tb.appendChild(tr);
+
+      tr.querySelectorAll("input").forEach(inp => {
+        inp.addEventListener("input", () => {
+          refreshAllLegSpeedDropdowns(true);
+        });
+      });
+      tr.querySelector("[data-delrow]").addEventListener("click", () => {
+        tr.remove();
+        refreshAllLegSpeedDropdowns(true);
+      });
+    }
+
+    function seedExample(kind){
+      const sample = [
+        {speed: 8.0, cons: 10.5},
+        {speed:10.0, cons: 13.0},
+        {speed:12.0, cons: 16.5}
+      ];
+      renderConsTable(kind, sample);
+      refreshAllLegSpeedDropdowns(true);
+    }
+
+    function sortTable(kind){
+      const pts = readConsTable(kind);
+      renderConsTable(kind, pts);
+      refreshAllLegSpeedDropdowns(true);
+    }
+
+    function clearTable(kind){
+      renderConsTable(kind, []);
+      refreshAllLegSpeedDropdowns(true);
+    }
+
+    function seedIfEmpty(targetKind, sourceKinds){
+      const existing = readConsTable(targetKind);
+      if(existing.length) return;
+      for(const s of sourceKinds){
+        const pts = readConsTable(s);
+        if(pts.length){
+          renderConsTable(targetKind, pts);
+          return;
+        }
+      }
+    }
+
+    function ensureRelevantTablesSeeded(){
+      // Use any available table as baseline so dropdown is not "Manual only"
+      const sources = ["normal","light","towing","ballast","laden"];
+      if(isAHTSType()){
+        seedIfEmpty("light", sources);
+        seedIfEmpty("towing", sources);
+      }else{
+        seedIfEmpty("ballast", sources);
+        seedIfEmpty("laden", sources);
+      }
+    }
+
+    /***********************
+     * Speed dropdown per leg
+     ***********************/
+    function buildSpeedOptions(kind){
+      const pts = readConsTable(kind);
+      const opts = [];
+      opts.push({value:"__manual__", label:"Manual"});
+      pts.forEach(p => opts.push({value:String(p.speed), label:fmt(p.speed,2)}));
+      return { opts, pts };
+    }
+
+    function setLegHint(i, msg){
+      const el = document.getElementById(`leg${i}_hint`);
+      if(el) el.textContent = msg || "";
+    }
+
+    function applySpeedSelectionToLeg(i, silent=false){
+      const kind = tableKindForLeg(i);
+      const { pts } = buildSpeedOptions(kind);
+
+      const speedSel = document.getElementById(`leg${i}_speedSel`);
+      const speedInp = document.getElementById(`leg${i}_speed`);
+      const consInp  = document.getElementById(`leg${i}_cons`);
+
+      if(!speedSel || !speedInp || !consInp) return;
+
+      const v = speedSel.value || "__manual__";
+
+      if(v === "__manual__"){
+        speedInp.disabled = false;
+        consInp.disabled  = false;
+        setLegHint(i, "Manual mode: enter speed and consumption.");
+        return;
+      }
+
+      const sp = toNumberFromValue(v);
+      const found = pts.find(p => Math.abs(p.speed - sp) < 1e-9);
+
+      speedInp.value = fmt(sp,2);
+      speedInp.disabled = true;
+
+      if(found){
+        consInp.value = fmt(found.cons,2);
+        consInp.disabled = true;
+        setLegHint(i, `Auto-filled from table (${kind}). You can switch to Manual to override.`);
+      }else{
+        // fallback
+        speedSel.value = "__manual__";
+        speedInp.disabled = false;
+        consInp.disabled = false;
+        setLegHint(i, "Speed not found in table. Switched to Manual.");
+      }
+      if(!silent){
+        // no-op
+      }
+    }
+
+    function populateLegSpeedDropdown(i, preserve=true){
+      const kind = tableKindForLeg(i);
+      const speedSel = document.getElementById(`leg${i}_speedSel`);
+      if(!speedSel) return;
+
+      const prev = preserve ? speedSel.value : "__manual__";
+      const { opts } = buildSpeedOptions(kind);
+
+      speedSel.innerHTML = "";
+      opts.forEach(o => {
+        const op = document.createElement("option");
+        op.value = o.value;
+        op.textContent = o.label;
+        speedSel.appendChild(op);
+      });
+
+      if(preserve && opts.some(o => o.value === prev)){
+        speedSel.value = prev;
+      }else{
+        const speedInpVal = toNumber(`leg${i}_speed`);
+        const pts = readConsTable(kind);
+        const match = pts.find(p => Math.abs(p.speed - speedInpVal) < 1e-6);
+        speedSel.value = match ? String(match.speed) : "__manual__";
+      }
+
+      applySpeedSelectionToLeg(i, true);
+    }
+
+    function refreshAllLegSpeedDropdowns(preserve=true){
+      const legCount = parseInt(safeText("legCount") || "1", 10);
+      for(let i=1;i<=legCount;i++){
+        populateLegSpeedDropdown(i, preserve);
+      }
+    }
+
+    function setLegConditionOptions(){
+      const isAHTS = isAHTSType();
+      const options = isAHTS ? ["Light","Towing"] : ["Ballast","Laden"];
+      const defaultVal = options[0];
+
+      for(let i=1;i<=5;i++){
+        const sel = document.getElementById(`leg${i}_cond`);
+        if(!sel) continue;
+        const prev = sel.value;
+        sel.innerHTML = "";
+        options.forEach(v => {
+          const op = document.createElement("option");
+          op.value = v;
+          op.textContent = v;
+          sel.appendChild(op);
+        });
+        sel.value = options.includes(prev) ? prev : defaultVal;
+      }
+    }
+
+    function toggleConditionFields(){
+      // Condition is relevant for all vessel types now
+      document.querySelectorAll(".legCondField").forEach(el => {
+        el.style.display = "block";
+      });
+
+      // Consumption tab: show the correct pair of tables
+      const isAHTS = isAHTSType();
+      const single = document.getElementById("singleTableBlock");
+      const ahtsBlock = document.getElementById("dualAHTSBlock");
+      const cargoBlock = document.getElementById("dualCargoBlock");
+
+      if(single) single.style.display = "none";
+      if(ahtsBlock) ahtsBlock.style.display = isAHTS ? "block" : "none";
+      if(cargoBlock) cargoBlock.style.display = isAHTS ? "none" : "block";
+
+      setLegConditionOptions();
+      ensureRelevantTablesSeeded();
+      refreshAllLegSpeedDropdowns(true);
+    }
+
+    /***********************
+     * Interpolation + Optimal speed
+     ***********************/
+    function interpCons(points, speed){
+      if(!points || points.length === 0) return null;
+      if(points.length === 1) return points[0].cons;
+
+      const s = speed;
+      if(s <= points[0].speed) return points[0].cons;
+      if(s >= points[points.length-1].speed) return points[points.length-1].cons;
+
+      for(let i=0;i<points.length-1;i++){
+        const a = points[i], b = points[i+1];
+        if(s >= a.speed && s <= b.speed){
+          const t = (s - a.speed) / (b.speed - a.speed);
+          return a.cons + t * (b.cons - a.cons);
+        }
+      }
+      return null;
+    }
+
+    function optimalForLeg(i){
+      const dist  = toNumber(`leg${i}_dist`);
+      const price = toNumber(`leg${i}_price`);
+      const opex  = toNumber("opexPerDay");
+      const kind  = tableKindForLeg(i);
+
+      const pts = readConsTable(kind);
+      if(dist <= 0) return { ok:false, msg:`Leg ${i}: distance missing.` };
+      if(pts.length < 1) return { ok:false, msg:`Leg ${i}: table (${kind}) is empty.` };
+
+      const sMin = pts[0].speed;
+      const sMax = pts[pts.length-1].speed;
+      const step = 0.1;
+
+      let best = null;
+      for(let s=sMin; s<=sMax+1e-9; s+=step){
+        const cons = interpCons(pts, s);
+        if(cons == null) continue;
+
+        const hours = dist / s;
+        const days  = hours / 24;
+        const fuel  = days * cons;
+
+        const fuelCost = (price > 0) ? (fuel * price) : 0;
+        const timeCost = (opex  > 0) ? (days * opex)  : 0;
+
+        const total = fuelCost + timeCost;
+
+        if(best === null || total < best.total){
+          best = { speed:s, cons, days, hours, fuel, fuelCost, timeCost, total, kind, price, opex };
+        }
+      }
+      if(!best) return { ok:false, msg:`Leg ${i}: cannot compute optimal.` };
+      return { ok:true, best };
+    }
+
+    /***********************
+     * Save/Load profiles
+     ***********************/
+    const LS_KEY = "ARGUS_IMC_VOYAGE_PROFILES_V2";
+
+    function readAllProfiles(){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if(!raw) return {};
+        const obj = JSON.parse(raw);
+        return (obj && typeof obj === "object") ? obj : {};
+      }catch(e){
+        return {};
+      }
+    }
+
+    function writeAllProfiles(obj){
+      localStorage.setItem(LS_KEY, JSON.stringify(obj || {}));
+    }
+
+    
+    function getActiveTabId(){
+      const btn = document.querySelector(".tabBtn.active");
+      return btn ? (btn.getAttribute("data-tab") || "tabVoyage") : "tabVoyage";
+    }
+
+    function setActiveTabId(tabId){
+      const btn = document.querySelector(`.tabBtn[data-tab="${tabId}"]`);
+      if(btn) btn.click();
+    }
+
+    function exportUIState(){
+      const resultsEl = document.getElementById("results");
+      const hasCompare = !!(resultsEl && resultsEl.querySelector(".compareWrap"));
+      const actions = document.getElementById("compareActions");
+      const compareActionsVisible = actions ? (actions.style.display !== "none") : false;
+
+      return {
+        activeTabId: getActiveTabId(),
+        resultsMode: hasCompare ? "compare" : "calc",
+        compareActionsVisible,
+        // Save comparison state only if we have it
+        baselineSnapshot: lastBaselineSnapshot || null,
+        optimalSnapshot:  lastOptimalSnapshot  || null,
+        baselineScenario: lastBaselineScenario || null,
+        optimalScenario:  lastOptimalScenario  || null,
+      };
+    }
+
+    function importUIState(state){
+      if(!state) return;
+
+      // Restore tab first (so user lands where they were)
+      if(state.activeTabId) setActiveTabId(state.activeTabId);
+
+      // Restore compare state if it existed
+      lastBaselineSnapshot = state.baselineSnapshot || null;
+      lastOptimalSnapshot  = state.optimalSnapshot  || null;
+      lastBaselineScenario = state.baselineScenario || null;
+      lastOptimalScenario  = state.optimalScenario  || null;
+
+      const actions = document.getElementById("compareActions");
+      if(actions) actions.style.display = state.compareActionsVisible ? "flex" : "none";
+
+      if(state.resultsMode === "compare" && lastBaselineScenario && lastOptimalScenario){
+        // Re-render compare panel
+        renderCompare(lastBaselineScenario, lastOptimalScenario);
+      }else{
+        // Default to showing calculation results from current form
+        calc(`<div class="highlight2">Profile loaded.</div>`);
+      }
+    }
+
+function snapshotForm(){
+      const legCount = parseInt(safeText("legCount") || "1", 10);
+      const legs = [];
+      for(let i=1;i<=5;i++){
+        legs.push({
+          from: safeText(`leg${i}_from`),
+          to: safeText(`leg${i}_to`),
+          dist: safeText(`leg${i}_dist`),
+          cond: safeText(`leg${i}_cond`) || defaultCondition(),
+          speedSel: safeText(`leg${i}_speedSel`),
+          speed: safeText(`leg${i}_speed`),
+          cons: safeText(`leg${i}_cons`),
+          price: safeText(`leg${i}_price`)
+        });
+      }
+
+      return {
+        version: 2,
+        savedAt: new Date().toISOString(),
+        general: {
+          vesselName: safeText("vesselName"),
+          vesselType: safeText("vesselType"),
+          jobRef: safeText("jobRef"),
+          fuelType: safeText("fuelType"),
+          opexPerDay: safeText("opexPerDay"),
+          legCount: String(legCount),
+          marginPct: safeText("marginPct"),
+          startFuel: safeText("startFuel"),
+          reserveFuel: safeText("reserveFuel"),
+        },
+        legs,
+        consTables: {
+          normal:  readConsTable("normal"),
+          light:   readConsTable("light"),
+          towing:  readConsTable("towing"),
+          ballast: readConsTable("ballast"),
+          laden:   readConsTable("laden"),
+        },
+        uiState: exportUIState()
+      };
+    }
+
+    function applySnapshot(snap){
+      if(!snap || !snap.general) return;
+
+      // tables first
+      renderConsTable("normal",  snap.consTables?.normal  || []);
+      renderConsTable("light",   snap.consTables?.light   || []);
+      renderConsTable("towing",  snap.consTables?.towing  || []);
+      renderConsTable("ballast", snap.consTables?.ballast || []);
+      renderConsTable("laden",   snap.consTables?.laden   || []);
+
+      // general
+      document.getElementById("vesselName").value = snap.general.vesselName || "";
+      document.getElementById("vesselType").value = snap.general.vesselType || "Cargo vessel";
+      document.getElementById("jobRef").value = snap.general.jobRef || "";
+      document.getElementById("fuelType").value = snap.general.fuelType || "MGO";
+      document.getElementById("opexPerDay").value = snap.general.opexPerDay || "0";
+      document.getElementById("legCount").value = snap.general.legCount || "1";
+      document.getElementById("marginPct").value = snap.general.marginPct || "0";
+      document.getElementById("startFuel").value = snap.general.startFuel || "0";
+      document.getElementById("reserveFuel").value = snap.general.reserveFuel || "0";
+
+      setLegVisible(parseInt(snap.general.legCount || "1",10));
+
+      toggleConditionFields();
+
+      // legs core
+      (snap.legs || []).slice(0,5).forEach((l, idx) => {
+        const i = idx+1;
+        document.getElementById(`leg${i}_from`).value = l.from || "";
+        document.getElementById(`leg${i}_to`).value = l.to || "";
+        document.getElementById(`leg${i}_dist`).value = l.dist || "0";
+        document.getElementById(`leg${i}_cond`).value = l.cond || defaultCondition();
+      });
+
+      refreshAllLegSpeedDropdowns(false);
+
+      (snap.legs || []).slice(0,5).forEach((l, idx) => {
+        const i = idx+1;
+        const speedSel = document.getElementById(`leg${i}_speedSel`);
+        if(speedSel) speedSel.value = l.speedSel || "__manual__";
+        document.getElementById(`leg${i}_speed`).value = l.speed || "10.0";
+        document.getElementById(`leg${i}_cons`).value  = l.cons  || "0";
+        document.getElementById(`leg${i}_price`).value = l.price || "0";
+        applySpeedSelectionToLeg(i, true);
+      });
+
+      calc(`<div class="highlight2">Profile loaded.</div>`);
+    }
+
+    function refreshProfileList(){
+      const list = document.getElementById("profileList");
+      const profiles = readAllProfiles();
+      const names = Object.keys(profiles).sort((a,b)=>a.localeCompare(b));
+
+      list.innerHTML = "";
+      const op0 = document.createElement("option");
+      op0.value = "";
+      op0.textContent = "— Select saved profile —";
+      list.appendChild(op0);
+
+      names.forEach(n => {
+        const op = document.createElement("option");
+        op.value = n;
+        op.textContent = n;
+        list.appendChild(op);
+      });
+    }
+
+    function saveProfile(){
+      const name = safeText("profileName") || safeText("vesselName") || safeText("jobRef") || "";
+      const box = document.getElementById("results");
+      if(!name){
+        box.innerHTML = `<span class="error">Please provide a profile name (or vessel name / voyage no.).</span>`;
+        return;
+      }
+      const profiles = readAllProfiles();
+      profiles[name] = snapshotForm();
+      writeAllProfiles(profiles);
+      refreshProfileList();
+      box.innerHTML = `<div class="highlight2">Profile saved: <strong>${name}</strong></div>`;
+    }
+
+    function loadProfile(){
+      const name = safeText("profileList");
+      const box = document.getElementById("results");
+      if(!name){
+        box.innerHTML = `<span class="error">Select a profile to load.</span>`;
+        return;
+      }
+      const profiles = readAllProfiles();
+      if(!profiles[name]){
+        box.innerHTML = `<span class="error">Profile not found.</span>`;
+        return;
+      }
+      applySnapshot(profiles[name]);
+      document.getElementById("profileName").value = name;
+    }
+
+    function deleteProfile(){
+      const name = safeText("profileList");
+      const box = document.getElementById("results");
+      if(!name){
+        box.innerHTML = `<span class="error">Select a profile to delete.</span>`;
+        return;
+      }
+      const profiles = readAllProfiles();
+      if(profiles[name]) delete profiles[name];
+      writeAllProfiles(profiles);
+      refreshProfileList();
+      box.innerHTML = `<div class="highlight2">Profile deleted: <strong>${name}</strong></div>`;
+    }
+
+    function exportJSON(){
+      const snap = snapshotForm();
+      const blob = new Blob([JSON.stringify(snap, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const base = (safeText("vesselName") || "ARGUS_IMC").replace(/[^a-z0-9_-]+/gi,"_");
+      a.download = base + "_voyage_profile.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(file){
+      const box = document.getElementById("results");
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const snap = JSON.parse(reader.result);
+          applySnapshot(snap);
+          box.innerHTML = `<div class="highlight2">Imported profile applied.</div>`;
+        }catch(e){
+          box.innerHTML = `<span class="error">Invalid JSON file.</span>`;
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /***********************
+     * Standard calculation (Baseline)
+     ***********************/
+    function calc(prefixHtml=""){
+      const legCount = parseInt(safeText("legCount") || "1", 10);
+      const vesselName = safeText("vesselName");
+      const vesselType = safeText("vesselType");
+      const jobRef   = safeText("jobRef");
+      const fuelType = safeText("fuelType") || "Fuel";
+
+      const marginPct   = toNumber("marginPct"); // planning only
+      const startFuel   = toNumber("startFuel");
+      const reserveFuel = toNumber("reserveFuel");
+      const opexPerDay  = toNumber("opexPerDay");
+
+      const box = document.getElementById("results");
+
+      if(marginPct < 0){
+        box.innerHTML = `<span class="error">Margin (%) cannot be negative.</span>`;
+        return;
+      }
+
+      let totalDist = 0;
+      let totalHours = 0;
+      let totalDays = 0;
+      let totalFuelBase = 0;
+      let totalCostBase = 0;
+      let totalTimeCost = 0;
+      let allPricesProvided = true;
+
+      let anyLegMissing = false;
+      const legLines = [];
+      const printRows = [];
+
+      if(vesselName) printRows.push(setPrintRow("Vessel name", vesselName));
+      printRows.push(setPrintRow("Vessel type", vesselType));
+      if(jobRef) printRows.push(setPrintRow("Job ref", jobRef));
+      printRows.push(setPrintRow("Fuel type", fuelType));
+      printRows.push(setPrintRow("Time Cost per day (USD/day)", fmtUSD(opexPerDay,0)));
+      printRows.push(setPrintRow("Number of legs", String(legCount)));
+      printRows.push(setPrintRow(" ", " ")); // spacer
+
+      for(let i=1;i<=legCount;i++){
+        const fromP = safeText(`leg${i}_from`);
+        const toP   = safeText(`leg${i}_to`);
+        const dist  = toNumber(`leg${i}_dist`);
+        const cond  = safeText(`leg${i}_cond`) || defaultCondition();
+        const speedSel = safeText(`leg${i}_speedSel`) || "__manual__";
+        const speed = toNumber(`leg${i}_speed`);
+        const cons  = toNumber(`leg${i}_cons`);
+        const price = toNumber(`leg${i}_price`);
+
+        if(dist <= 0 || speed <= 0 || cons <= 0){
+          anyLegMissing = true;
+        }
+
+        const hours = (dist > 0 && speed > 0) ? (dist / speed) : 0;
+        const days  = hours / 24;
+        const fuel  = (days > 0 && cons > 0) ? (days * cons) : 0;
+
+        const hasPrice = price > 0;
+        const cost = (hasPrice) ? (fuel * price) : 0;
+        const timeCost = (opexPerDay > 0) ? (days * opexPerDay) : 0;
+
+        totalDist += dist;
+        totalHours += hours;
+        totalDays += days;
+        totalFuelBase += fuel;
+        totalTimeCost += timeCost;
+
+        if(hasPrice){
+          totalCostBase += cost;
+        }else{
+          allPricesProvided = false;
+        }
+
+        const kind = tableKindForLeg(i);
+        const modeLabel = (speedSel === "__manual__") ? "Manual" : `From table (${kind})`;
+
+        legLines.push(`
+          <div style="margin-top:8px;">
+            <div><strong>Leg ${i} route:</strong> ${(fromP || "—")} → ${(toP || "—")}</div>
+            <div><strong>Condition:</strong> ${cond} (table: ${kind})</div>
+            <div><strong>Distance / Speed:</strong> ${fmt(dist,0)} nm / ${fmt(speed,2)} kn <span class="badge" style="margin-left:6px;">${modeLabel}</span></div>
+            <div><strong>Sea time:</strong> ${fmt(hours,2)} h (${fmt(days,2)} days)</div>
+            <div><strong>Consumption:</strong> ${fmt(cons,2)} MT/day</div>
+            <div><strong>Fuel (base):</strong> ${fmt(fuel,2)} MT</div>
+            <div><strong>Price:</strong> ${hasPrice ? (fmtUSD(price,0) + " /MT") : "—"}</div>
+            <div><strong>Cost (fuel base):</strong> ${hasPrice ? fmtUSD(cost,0) : "—"}</div>
+            <div><strong>Time cost (OPEX):</strong> ${opexPerDay > 0 ? fmtUSD(timeCost,0) : "—"}</div>
+          </div>
+        `);
+
+        printRows.push(setPrintRow(`Leg ${i} route`, `${(fromP || "—")} → ${(toP || "—")}`));
+        printRows.push(setPrintRow(`Leg ${i} condition`, `${cond} (table: ${kind})`));
+        printRows.push(setPrintRow(`Leg ${i} distance (nm)`, fmt(dist,0)));
+        printRows.push(setPrintRow(`Leg ${i} speed (kn)`, fmt(speed,2)));
+        printRows.push(setPrintRow(`Leg ${i} sea time (h)`, fmt(hours,2)));
+        printRows.push(setPrintRow(`Leg ${i} sea time (days)`, fmt(days,2)));
+        printRows.push(setPrintRow(`Leg ${i} cons (MT/day)`, fmt(cons,2)));
+        printRows.push(setPrintRow(`Leg ${i} fuel (base) (MT)`, fmt(fuel,2)));
+        printRows.push(setPrintRow(`Leg ${i} price (USD/MT)`, hasPrice ? (fmtUSD(price,0) + " /MT") : "—"));
+        printRows.push(setPrintRow(`Leg ${i} fuel cost (base) (USD)`, hasPrice ? fmtUSD(cost,0) : "—"));
+        printRows.push(setPrintRow(`Leg ${i} time cost (OPEX) (USD)`, opexPerDay > 0 ? fmtUSD(timeCost,0) : "—"));
+        printRows.push(setPrintRow(" ", " "));
+      }
+
+      if(anyLegMissing){
+        box.innerHTML = `<span class="error">Please fill Distance, Speed and Daily consumption for all active legs (1–${legCount}).</span>`;
+        return;
+      }
+
+      const totalFuelPlan = totalFuelBase * (1 + (marginPct / 100));
+      const totalFuelCostPlan = totalCostBase * (1 + (marginPct / 100));
+      const requiredOnBoardPlanning = totalFuelPlan + Math.max(0, reserveFuel);
+      const bunkerNeeded = Math.max(0, requiredOnBoardPlanning - Math.max(0, startFuel));
+
+      const baseFuelCostBlock = allPricesProvided
+        ? `<div class="highlight">Total fuel cost (base, USD): ${fmtUSD(totalCostBase,0)}</div>`
+        : `<div class="highlight">Total fuel cost (base, USD): ${fmtUSD(totalCostBase,0)} <span style="font-weight:700;opacity:.9;">(partial – missing some leg prices)</span></div>`;
+
+      const baseTimeCostBlock = (opexPerDay > 0)
+        ? `<div class="highlight2">Total time cost (OPEX): ${fmtUSD(totalTimeCost,0)} (OPEX/day ${fmtUSD(opexPerDay,0)})</div>`
+        : ``;
+
+      const totalEconomicBase = totalCostBase + totalTimeCost;
+      const econBlock = (opexPerDay > 0 || !allPricesProvided === false)
+        ? `<div class="highlight2">Total economic cost (fuel + time): ${fmtUSD(totalEconomicBase,0)}</div>`
+        : ``;
+
+      const planningBlock = (marginPct > 0)
+        ? `
+          <div class="highlight2">Planning fuel (incl. margin): ${fmt(totalFuelPlan,2)} MT</div>
+          ${allPricesProvided ? `<div class="note">Planning fuel cost (incl. margin, informational): ${fmtUSD(totalFuelCostPlan,0)}</div>` : ``}
+        `
+        : ``;
+
+      let bunkeringBlock = "";
+      if(startFuel > 0 || reserveFuel > 0 || marginPct > 0){
+        const ok = bunkerNeeded <= 0.000001;
+        bunkeringBlock = ok
+          ? `<div class="highlight">Bunkering required (planning): <span style="font-weight:800;">NO</span> — Start ROB ${fmt(startFuel,2)} MT covers required ${fmt(requiredOnBoardPlanning,2)} MT (incl. reserve + margin if any).</div>`
+          : `<div class="warn">Bunkering required (planning): <span style="font-weight:800;">YES</span> — Need to bunker about ${fmt(bunkerNeeded,2)} MT (Required ${fmt(requiredOnBoardPlanning,2)} MT, Start ROB ${fmt(startFuel,2)} MT).</div>`;
+      }
+
+      box.innerHTML = `
+        ${prefixHtml || ""}
+        ${vesselName ? `<div><strong>Vessel:</strong> ${vesselName} (${vesselType})</div>` : `<div><strong>Vessel type:</strong> ${vesselType}</div>`}
+        ${jobRef ? `<div><strong>Job ref:</strong> ${jobRef}</div>` : ``}
+        <div><strong>Fuel:</strong> ${fuelType}</div>
+        <div><strong>Legs:</strong> ${legCount}</div>
+
+        <hr>
+
+        ${legLines.join("")}
+
+        <hr>
+
+        <div><strong>Total distance:</strong> ${fmt(totalDist,0)} nm</div>
+        <div><strong>Total sea time:</strong> ${fmt(totalHours,2)} h (${fmt(totalDays,2)} days)</div>
+        <div><strong>Total fuel (base):</strong> ${fmt(totalFuelBase,2)} MT</div>
+        ${baseFuelCostBlock}
+        ${baseTimeCostBlock}
+        ${econBlock}
+        ${planningBlock}
+        ${bunkeringBlock ? `<hr>${bunkeringBlock}` : ``}
+      `;
+
+      // Print summary totals
+      printRows.push(setPrintRow("TOTAL distance (nm)", fmt(totalDist,0)));
+      printRows.push(setPrintRow("TOTAL sea time (h)", fmt(totalHours,2)));
+      printRows.push(setPrintRow("TOTAL sea time (days)", fmt(totalDays,2)));
+      printRows.push(setPrintRow("TOTAL fuel (base) (MT)", fmt(totalFuelBase,2)));
+      printRows.push(setPrintRow("TOTAL fuel cost (base) (USD)", allPricesProvided ? fmtUSD(totalCostBase,0) : (fmtUSD(totalCostBase,0) + " (partial)")));
+      printRows.push(setPrintRow("TOTAL time cost (OPEX) (USD)", opexPerDay > 0 ? fmtUSD(totalTimeCost,0) : "—"));
+      printRows.push(setPrintRow("TOTAL economic (fuel+time) (USD)", fmtUSD(totalEconomicBase,0)));
+
+      printRows.push(setPrintRow("Margin (%) (planning)", fmt(marginPct,1)));
+      printRows.push(setPrintRow("Fuel incl. margin (planning) (MT)", fmt(totalFuelPlan,2)));
+      printRows.push(setPrintRow("Fuel cost incl. margin (planning) (USD)", allPricesProvided ? fmtUSD(totalFuelCostPlan,0) : "—"));
+
+      printRows.push(setPrintRow("Start ROB (MT)", fmt(startFuel,2)));
+      printRows.push(setPrintRow("Arrival reserve (MT)", fmt(reserveFuel,2)));
+      printRows.push(setPrintRow("Bunker needed (planning) (MT)", fmt(bunkerNeeded,2)));
+
+      fillPrintSummary(printRows);
+    }
+
+    /***********************
+     * Optimal comparison (does NOT change legs)
+     ***********************/
+    let lastBaselineSnapshot = null;
+    let lastOptimalSnapshot = null;
+
+    function captureLegSnapshot(){
+      const legCount = parseInt(safeText("legCount") || "1", 10);
+      const legs = [];
+      for(let i=1;i<=legCount;i++){
+        legs.push({
+          i,
+          cond: safeText(`leg${i}_cond`) || defaultCondition(),
+          speedSel: safeText(`leg${i}_speedSel`) || "__manual__",
+          speed: safeText(`leg${i}_speed`),
+          cons: safeText(`leg${i}_cons`)
+        });
+      }
+      return { legCount, legs };
+    }
+
+    function applyLegSnapshot(snap){
+      if(!snap) return;
+      for(const l of snap.legs){
+        const i = l.i;
+        const condSel = document.getElementById(`leg${i}_cond`);
+        if(condSel) condSel.value = l.cond;
+
+        populateLegSpeedDropdown(i, true);
+
+        const speedSel = document.getElementById(`leg${i}_speedSel`);
+        if(speedSel) speedSel.value = l.speedSel || "__manual__";
+
+        const speedInp = document.getElementById(`leg${i}_speed`);
+        const consInp  = document.getElementById(`leg${i}_cons`);
+        if(speedInp) speedInp.value = l.speed || "";
+        if(consInp)  consInp.value  = l.cons  || "";
+
+        applySpeedSelectionToLeg(i, true);
+      }
+      const actions = document.getElementById("compareActions");
+      if(actions) actions.style.display = "none";
+      calc(`<div class="highlight2">Snapshot applied.</div>`);
+    }
+
+    function scenarioFromSnapshot(snap, bestPerLeg=null){
+      // If bestPerLeg provided: override speed/cons for "optimal" scenario, otherwise use current form values.
+      const legCount = parseInt(safeText("legCount") || "1", 10);
+      const opex = toNumber("opexPerDay");
+
+      const legs = [];
+      const totals = { dist:0, days:0, fuel:0, fuelCost:0, timeCost:0, econ:0, pricesComplete:true };
+
+      for(let i=1;i<=legCount;i++){
+        const dist = toNumber(`leg${i}_dist`);
+        const price = toNumber(`leg${i}_price`);
+        const hasPrice = price > 0;
+
+        let speed = toNumber(`leg${i}_speed`);
+        let cons  = toNumber(`leg${i}_cons`);
+
+        if(bestPerLeg){
+          const b = bestPerLeg.find(x => x.i === i);
+          if(b){
+            speed = b.speed;
+            cons  = b.cons;
+          }
+        }
+
+        const days = (dist>0 && speed>0) ? (dist/speed)/24 : 0;
+        const fuel = (days>0 && cons>0) ? days*cons : 0;
+        const fuelCost = hasPrice ? fuel*price : 0;
+        const timeCost = (opex>0) ? days*opex : 0;
+        const econ = fuelCost + timeCost;
+
+        if(!hasPrice) totals.pricesComplete = false;
+
+        totals.dist += dist;
+        totals.days += days;
+        totals.fuel += fuel;
+        totals.fuelCost += fuelCost;
+        totals.timeCost += timeCost;
+        totals.econ += econ;
+
+        legs.push({ i, speed, cons, days, fuel, econ });
+      }
+      return { legCount, legs, totals, opex };
+    }
+
+    function deltaClass(v){
+      if(Math.abs(v) < 1e-9) return "muted";
+      return (v > 0) ? "deltaPos" : "deltaNeg";
+    }
+
+    function renderCompare(baseScenario, optScenario){
+      const box = document.getElementById("results");
+      const actions = document.getElementById("compareActions");
+      if(actions) actions.style.display = "flex";
+
+      const bT = baseScenario.totals;
+      const oT = optScenario.totals;
+
+      const econDelta = oT.econ - bT.econ;
+      const timeDelta = oT.days - bT.days;
+      const fuelDelta = oT.fuel - bT.fuel;
+
+      const pricesNote = (!bT.pricesComplete || !oT.pricesComplete)
+        ? `<div class="muted" style="font-size:12px;margin-top:6px;">Note: Some leg prices are missing → fuel cost shown is partial. Time cost uses OPEX/day.</div>`
+        : ``;
+
+      const rows = [];
+      for(let i=1;i<=baseScenario.legCount;i++){
+        const b = baseScenario.legs.find(x=>x.i===i);
+        const o = optScenario.legs.find(x=>x.i===i);
+        const dDays = o.days - b.days;
+        const dFuel = o.fuel - b.fuel;
+        const dEcon = o.econ - b.econ;
+
+        rows.push(`
+          <tr>
+            <td>Leg ${i}</td>
+            <td class="right">${fmt(b.speed,2)}</td>
+            <td class="right">${fmt(b.cons,2)}</td>
+            <td class="right">${fmt(b.days,2)}</td>
+            <td class="right">${fmt(b.fuel,2)}</td>
+            <td class="right">${fmtUSD(b.econ,0)}</td>
+
+            <td class="right">${fmt(o.speed,2)}</td>
+            <td class="right">${fmt(o.cons,2)}</td>
+            <td class="right">${fmt(o.days,2)}</td>
+            <td class="right">${fmt(o.fuel,2)}</td>
+            <td class="right">${fmtUSD(o.econ,0)}</td>
+
+            <td class="right ${deltaClass(dDays)}">${(dDays>0?"+":"")}${fmt(dDays,2)}</td>
+            <td class="right ${deltaClass(dFuel)}">${(dFuel>0?"+":"")}${fmt(dFuel,2)}</td>
+            <td class="right ${deltaClass(dEcon)}">${(dEcon>0?"+":"")}${fmtUSD(dEcon,0)}</td>
+          </tr>
+        `);
+      }
+
+      box.innerHTML = `
+        <div class="compareWrap">
+          <div class="compareTitle">
+            <b>Comparison: Current vs Optimal (Fuel cost + Time cost)</b>
+            <span class="badge">OPEX/day used: ${fmtUSD(baseScenario.opex,0)}</span>
+          </div>
+
+          <div class="compareGrid">
+            <div class="compareBox">
+              <h3>Current (baseline)</h3>
+              <div class="kv">
+                <div class="k">Total distance (nm)</div><div class="v">${fmt(bT.dist,0)}</div>
+                <div class="k">Sea time (days)</div><div class="v">${fmt(bT.days,2)}</div>
+                <div class="k">Fuel (MT)</div><div class="v">${fmt(bT.fuel,2)}</div>
+                <div class="k">Fuel cost (USD)</div><div class="v">${fmtUSD(bT.fuelCost,0)}</div>
+                <div class="k">Time cost (USD)</div><div class="v">${fmtUSD(bT.timeCost,0)}</div>
+                <div class="k">Economic total (USD)</div><div class="v"><b>${fmtUSD(bT.econ,0)}</b></div>
+              </div>
+            </div>
+
+            <div class="compareBox">
+              <h3>Optimal</h3>
+              <div class="kv">
+                <div class="k">Total distance (nm)</div><div class="v">${fmt(oT.dist,0)}</div>
+                <div class="k">Sea time (days)</div><div class="v">${fmt(oT.days,2)}</div>
+                <div class="k">Fuel (MT)</div><div class="v">${fmt(oT.fuel,2)}</div>
+                <div class="k">Fuel cost (USD)</div><div class="v">${fmtUSD(oT.fuelCost,0)}</div>
+                <div class="k">Time cost (USD)</div><div class="v">${fmtUSD(oT.timeCost,0)}</div>
+                <div class="k">Economic total (USD)</div><div class="v"><b>${fmtUSD(oT.econ,0)}</b></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="compareBox" style="margin-top:10px;">
+            <h3>Delta (Optimal - Baseline)</h3>
+            <div class="kv">
+              <div class="k">Sea time delta (days)</div><div class="v ${deltaClass(timeDelta)}">${(timeDelta>0?"+":"")}${fmt(timeDelta,2)}</div>
+              <div class="k">Fuel delta (MT)</div><div class="v ${deltaClass(fuelDelta)}">${(fuelDelta>0?"+":"")}${fmt(fuelDelta,2)}</div>
+              <div class="k">Economic delta (USD)</div><div class="v ${deltaClass(econDelta)}">${(econDelta>0?"+":"")}${fmtUSD(econDelta,0)}</div>
+            </div>
+            ${pricesNote}
+          </div>
+
+          <table class="compareTable">
+            <thead>
+              <tr>
+                <th rowspan="2">Leg</th>
+                <th colspan="5">Baseline</th>
+                <th colspan="5">Optimal</th>
+                <th colspan="3">Delta (Opt - Base)</th>
+              </tr>
+              <tr>
+                <th class="right">Speed</th>
+                <th class="right">Cons</th>
+                <th class="right">Days</th>
+                <th class="right">Fuel</th>
+                <th class="right">Econ</th>
+
+                <th class="right">Speed</th>
+                <th class="right">Cons</th>
+                <th class="right">Days</th>
+                <th class="right">Fuel</th>
+                <th class="right">Econ</th>
+
+                <th class="right">Days</th>
+                <th class="right">Fuel</th>
+                <th class="right">USD</th>
+              </tr>
+            </thead>
+            <tbody>${rows.join("")}</tbody>
+          </table>
+
+          <div class="note" style="margin-top:8px;">
+            Tip: Use <b>Apply optimal</b> to fill the legs, or <b>Restore previous</b> to go back.
+          </div>
+        </div>
+      `;
+    }
+
+    function buildOptimalSnapshot(bestPerLeg){
+      const legCount = parseInt(safeText("legCount") || "1", 10);
+      const legs = [];
+      for(let i=1;i<=legCount;i++){
+        const kind = tableKindForLeg(i);
+        const pts = readConsTable(kind);
+        const b = bestPerLeg.find(x => x.i === i);
+        const speed = b.speed;
+        const cons  = b.cons;
+
+        const exact = pts.find(p => Math.abs(p.speed - speed) < 0.05);
+        const speedSel = exact ? String(exact.speed) : "__manual__";
+
+        legs.push({
+          i,
+          cond: safeText(`leg${i}_cond`) || defaultCondition(),
+          speedSel,
+          speed: fmt(speed,2),
+          cons: fmt(cons,2),
+        });
+      }
+      return { legCount, legs };
+    }
+
+    function applyOptimalCompare(){
+      const legCount = parseInt(safeText("legCount") || "1", 10);
+      const box = document.getElementById("results");
+
+      const msgs = [];
+      const bestPerLeg = [];
+      for(let i=1;i<=legCount;i++){
+        const res = optimalForLeg(i);
+        if(!res.ok) msgs.push(res.msg);
+        else bestPerLeg.push({ i, speed: res.best.speed, cons: res.best.cons });
+      }
+      if(msgs.length){
+        box.innerHTML = `<span class="error">Cannot compute optimal:</span><br>${msgs.map(m=>`• ${m}`).join("<br>")}`;
+        const actions = document.getElementById("compareActions");
+        if(actions) actions.style.display = "none";
+        return;
+      }
+
+      lastBaselineSnapshot = captureLegSnapshot();
+      lastOptimalSnapshot = buildOptimalSnapshot(bestPerLeg);
+
+      const baseScenario = scenarioFromSnapshot(lastBaselineSnapshot);
+      const optScenario  = scenarioFromSnapshot(lastBaselineSnapshot, bestPerLeg);
+
+      renderCompare(baseScenario, optScenario);
+    }
+
+    /***********************
+     * UI wiring
+     ***********************/
+    // Tabs
+    document.querySelectorAll(".tabBtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-tab");
+        document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tabContent").forEach(c => c.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(id).classList.add("active");
+      });
+    });
+
+    // Buttons
+    document.getElementById("btnCalc").addEventListener("click", () => {
+      const actions = document.getElementById("compareActions");
+      if(actions) actions.style.display = "none";
+      calc();
+    });
+    document.getElementById("btnOptimal").addEventListener("click", applyOptimalCompare);
+    document.getElementById("btnPrint").addEventListener("click", () => window.print());
+
+    document.getElementById("btnApplyOptimal").addEventListener("click", () => {
+      if(!lastOptimalSnapshot){
+        calc(`<div class="highlight2">No optimal snapshot available yet. Press “Calculate optimal speed / consumption” first.</div>`);
+        return;
+      }
+      applyLegSnapshot(lastOptimalSnapshot);
+    });
+
+    document.getElementById("btnRestoreBaseline").addEventListener("click", () => {
+      if(!lastBaselineSnapshot){
+        calc(`<div class="highlight2">No baseline snapshot available yet. Press “Calculate optimal speed / consumption” first.</div>`);
+        return;
+      }
+      applyLegSnapshot(lastBaselineSnapshot);
+    });
+
+    // Leg count
+    document.getElementById("legCount").addEventListener("change", (e) => {
+      const n = parseInt(e.target.value, 10) || 1;
+      setLegVisible(n);
+      refreshAllLegSpeedDropdowns(true);
+    });
+
+    // Vessel type affects table blocks + condition options
+    document.getElementById("vesselType").addEventListener("change", () => {
+      toggleConditionFields();
+    });
+
+    // Leg condition changes table used
+    for(let i=1;i<=5;i++){
+      const condSel = document.getElementById(`leg${i}_cond`);
+      if(condSel){
+        condSel.addEventListener("change", () => {
+          populateLegSpeedDropdown(i, true);
+        });
+      }
+      const speedSel = document.getElementById(`leg${i}_speedSel`);
+      if(speedSel){
+        speedSel.addEventListener("change", () => {
+          applySpeedSelectionToLeg(i);
+        });
+      }
+    }
+
+    // Table actions
+    document.querySelectorAll("[data-addrow]").forEach(b => b.addEventListener("click", () => addConsRow(b.getAttribute("data-addrow"))));
+    document.querySelectorAll("[data-sort]").forEach(b => b.addEventListener("click", () => sortTable(b.getAttribute("data-sort"))));
+    document.querySelectorAll("[data-clear]").forEach(b => b.addEventListener("click", () => clearTable(b.getAttribute("data-clear"))));
+    document.querySelectorAll("[data-seed]").forEach(b => b.addEventListener("click", () => seedExample(b.getAttribute("data-seed"))));
+
+    // Save/Load
+    document.getElementById("btnSaveProfile").addEventListener("click", saveProfile);
+    document.getElementById("btnLoadProfile").addEventListener("click", loadProfile);
+    document.getElementById("btnDeleteProfile").addEventListener("click", deleteProfile);
+    document.getElementById("btnExport").addEventListener("click", exportJSON);
+    document.getElementById("importFile").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if(f) importJSON(f);
+      e.target.value = "";
+    });
+
+    // Enter key triggers calc in inputs/selects
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+        if(tag === "input" || tag === "select" || tag === "textarea"){
+          e.preventDefault();
+          const actions = document.getElementById("compareActions");
+          if(actions) actions.style.display = "none";
+          calc();
+        }
+      }
+    });
+
+    /***********************
+     * Init defaults
+     ***********************/
+    function init(){
+      setLegVisible(1);
+
+      // Seed baseline normal
+      renderConsTable("normal", [{speed:10.0, cons:13.0}]);
+
+      // Ensure all other tables exist (empty)
+      renderConsTable("light", []);
+      renderConsTable("towing", []);
+      renderConsTable("ballast", []);
+      renderConsTable("laden", []);
+
+      toggleConditionFields();
+      refreshAllLegSpeedDropdowns(false);
+
+      refreshProfileList();
+      fillPrintSummary([
+        setPrintRow("Vessel name", "—"),
+        setPrintRow("Vessel type", "—"),
+        setPrintRow("Fuel type", "—"),
+        setPrintRow("Number of legs", "1")
+      ]);
+
+      // Start in manual mode
+      for(let i=1;i<=5;i++){
+        const sel = document.getElementById(`leg${i}_speedSel`);
+        if(sel) sel.value = "__manual__";
+        applySpeedSelectionToLeg(i, true);
+      }
+    }
+
+    init();
+
+  
+
+
+    /***********************
+     * Patch: Robust Save/Load + persist results (Profile v2.1)
+     * - Fixes ReferenceError in exportUIState (missing scenario vars)
+     * - Captures last results HTML
+     * - Handles environments where localStorage is disabled
+     ***********************/
+    var lastBaselineScenario = null;
+    var lastOptimalScenario  = null;
+    var lastResultsHTML      = null;
+
+    // Robust storage helpers (override)
+    const __LS_KEY_PATCH = "ARGUS_IMC_VOYAGE_PROFILES_V3";
+    window.storageAvailable = function(){
+      try{
+        const k = "__argus_test__";
+        localStorage.setItem(k, "1");
+        localStorage.removeItem(k);
+        return true;
+      }catch(e){
+        return false;
+      }
+    };
+
+    window.readAllProfiles = function(){
+      if(!window.storageAvailable()) return { __storageDisabled:true };
+      try{
+        const raw = localStorage.getItem(__LS_KEY_PATCH);
+        if(!raw) return {};
+        const obj = JSON.parse(raw);
+        return (obj && typeof obj === "object") ? obj : {};
+      }catch(e){
+        return {};
+      }
+    };
+
+    window.writeAllProfiles = function(obj){
+      if(!window.storageAvailable()) return { ok:false, err:"Storage disabled" };
+      try{
+        localStorage.setItem(__LS_KEY_PATCH, JSON.stringify(obj || {}));
+        return { ok:true };
+      }catch(e){
+        return { ok:false, err:String(e && e.message ? e.message : e) };
+      }
+    };
+
+    // Capture results after calculations
+    if(typeof window.calc === "function"){
+      const __calc0 = window.calc;
+      window.calc = function(messageHTML){
+        __calc0(messageHTML);
+        try{
+          const box = document.getElementById("results");
+          if(box) lastResultsHTML = box.innerHTML;
+          const actions = document.getElementById("compareActions");
+          if(actions) actions.style.display = "none";
+        }catch(e){}
+      };
+    }
+
+    if(typeof window.renderCompare === "function"){
+      const __renderCompare0 = window.renderCompare;
+      window.renderCompare = function(baseScenario, optScenario){
+        // Store scenarios globally so they can be saved
+        lastBaselineScenario = baseScenario || null;
+        lastOptimalScenario  = optScenario  || null;
+
+        __renderCompare0(baseScenario, optScenario);
+
+        try{
+          const box = document.getElementById("results");
+          if(box) lastResultsHTML = box.innerHTML;
+        }catch(e){}
+      };
+    }
+
+    // Override exportUIState / importUIState to include resultsHTML
+    window.exportUIState = function(){
+      const resultsEl = document.getElementById("results");
+      const hasCompare = !!(resultsEl && resultsEl.querySelector(".compareWrap"));
+      const actions = document.getElementById("compareActions");
+      const compareActionsVisible = actions ? (actions.style.display !== "none") : false;
+
+      // active tab
+      const btn = document.querySelector(".tabBtn.active");
+      const activeTabId = btn ? (btn.getAttribute("data-tab") || "tabVoyage") : "tabVoyage";
+
+      return {
+        activeTabId,
+        resultsMode: hasCompare ? "compare" : "calc",
+        compareActionsVisible,
+        resultsHTML: (lastResultsHTML || (resultsEl ? resultsEl.innerHTML : null)),
+        baselineSnapshot: (typeof window.lastBaselineSnapshot !== "undefined") ? (window.lastBaselineSnapshot || null) : null,
+        optimalSnapshot:  (typeof window.lastOptimalSnapshot  !== "undefined") ? (window.lastOptimalSnapshot  || null) : null,
+        baselineScenario: lastBaselineScenario || null,
+        optimalScenario:  lastOptimalScenario  || null,
+      };
+    };
+
+    window.importUIState = function(state){
+      if(!state) return;
+
+      // restore tab
+      if(state.activeTabId){
+        const btn = document.querySelector(`.tabBtn[data-tab="${state.activeTabId}"]`);
+        if(btn) btn.click();
+      }
+
+      // restore global compare state
+      if(typeof window.lastBaselineSnapshot !== "undefined") window.lastBaselineSnapshot = state.baselineSnapshot || null;
+      if(typeof window.lastOptimalSnapshot  !== "undefined") window.lastOptimalSnapshot  = state.optimalSnapshot  || null;
+      lastBaselineScenario = state.baselineScenario || null;
+      lastOptimalScenario  = state.optimalScenario  || null;
+
+      const actions = document.getElementById("compareActions");
+      if(actions) actions.style.display = state.compareActionsVisible ? "flex" : "none";
+
+      const resultsEl = document.getElementById("results");
+      if(state.resultsMode === "compare" && lastBaselineScenario && lastOptimalScenario){
+        // re-render compare panel (preferred, keeps deltas consistent)
+        if(typeof window.renderCompare === "function"){
+          window.renderCompare(lastBaselineScenario, lastOptimalScenario);
+        }else if(resultsEl && state.resultsHTML){
+          resultsEl.innerHTML = state.resultsHTML;
+        }
+      }else{
+        // Restore last saved calc output if available; otherwise recalc
+        if(resultsEl && state.resultsHTML){
+          resultsEl.innerHTML = state.resultsHTML;
+          lastResultsHTML = state.resultsHTML;
+        }else if(typeof window.calc === "function"){
+          window.calc(`<div class="highlight2">Profile loaded.</div>`);
+        }
+      }
+    };
+
+    // Override refresh list and profile actions with clear messages
+    window.refreshProfileList = function(){
+      const list = document.getElementById("profileList");
+      if(!list) return;
+      const profiles = window.readAllProfiles();
+
+      list.innerHTML = "";
+      if(profiles.__storageDisabled){
+        const op = document.createElement("option");
+        op.value = "";
+        op.textContent = "— Storage disabled (use Export/Import JSON) —";
+        list.appendChild(op);
+        return;
+      }
+
+      const op0 = document.createElement("option");
+      op0.value = "";
+      op0.textContent = "— Select saved profile —";
+      list.appendChild(op0);
+
+      Object.keys(profiles).sort((a,b)=>a.localeCompare(b)).forEach(n=>{
+        const op = document.createElement("option");
+        op.value = n;
+        op.textContent = n;
+        list.appendChild(op);
+      });
+    };
+
+    window.saveProfile = function(){
+      const box = document.getElementById("results");
+      const name = (document.getElementById("profileName")?.value || "").trim();
+      if(!name){
+        if(box) box.innerHTML = `<div class="warn">Please enter a profile name first.</div>`;
+        return;
+      }
+      const profiles = window.readAllProfiles();
+      if(profiles.__storageDisabled){
+        if(box) box.innerHTML = `<div class="warn">Local storage is disabled here. Use “Export JSON” to save a profile file.</div>`;
+        return;
+      }
+
+      // snapshotForm already includes vessel type, legs, tables, and uiState
+      profiles[name] = window.snapshotForm ? window.snapshotForm() : null;
+      const res = window.writeAllProfiles(profiles);
+      if(!res.ok){
+        if(box) box.innerHTML = `<div class="warn">Could not save to local storage (${res.err}). Use “Export JSON”.</div>`;
+        return;
+      }
+      window.refreshProfileList();
+      if(box) box.innerHTML = `<div class="highlight2">Profile saved: <strong>${name}</strong></div>`;
+    };
+
+    window.loadProfile = function(){
+      const box = document.getElementById("results");
+      const name = document.getElementById("profileList")?.value || "";
+      if(!name){
+        if(box) box.innerHTML = `<div class="warn">Select a saved profile to load.</div>`;
+        return;
+      }
+      const profiles = window.readAllProfiles();
+      if(profiles.__storageDisabled){
+        if(box) box.innerHTML = `<div class="warn">Local storage is disabled here. Use “Import JSON” to load a saved profile file.</div>`;
+        return;
+      }
+      if(!profiles[name]){
+        if(box) box.innerHTML = `<div class="warn">Profile not found.</div>`;
+        return;
+      }
+      if(window.applySnapshot) window.applySnapshot(profiles[name]);
+      const pn = document.getElementById("profileName");
+      if(pn) pn.value = name;
+    };
+
+    window.deleteProfile = function(){
+      const box = document.getElementById("results");
+      const name = document.getElementById("profileList")?.value || "";
+      if(!name){
+        if(box) box.innerHTML = `<div class="warn">Select a saved profile to delete.</div>`;
+        return;
+      }
+      const profiles = window.readAllProfiles();
+      if(profiles.__storageDisabled){
+        if(box) box.innerHTML = `<div class="warn">Local storage is disabled here. Cannot delete. Use Export/Import JSON workflow.</div>`;
+        return;
+      }
+      delete profiles[name];
+      const res = window.writeAllProfiles(profiles);
+      if(!res.ok){
+        if(box) box.innerHTML = `<div class="warn">Could not update local storage (${res.err}).</div>`;
+        return;
+      }
+      window.refreshProfileList();
+      if(box) box.innerHTML = `<div class="highlight2">Profile deleted: <strong>${name}</strong></div>`;
+    };
+
+    // Sync global bindings (so existing code calling exportUIState(), readAllProfiles(), etc uses patched versions)
+    try{
+      readAllProfiles = window.readAllProfiles;
+      writeAllProfiles = window.writeAllProfiles;
+      refreshProfileList = window.refreshProfileList;
+      saveProfile = window.saveProfile;
+      loadProfile = window.loadProfile;
+      deleteProfile = window.deleteProfile;
+      exportUIState = window.exportUIState;
+      importUIState = window.importUIState;
+    }catch(e){}
+
+    // After patch, refresh dropdown list
+    try{ window.refreshProfileList(); }catch(e){}
+
+
+</script>
+</body>
+</html>

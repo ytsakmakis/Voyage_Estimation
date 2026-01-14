@@ -1214,11 +1214,10 @@
         activeTabId: getActiveTabId(),
         resultsMode: hasCompare ? "compare" : "calc",
         compareActionsVisible,
-        // Save comparison state only if we have it
-        baselineSnapshot: lastBaselineSnapshot || null,
-        optimalSnapshot:  lastOptimalSnapshot  || null,
-        baselineScenario: lastBaselineScenario || null,
-        optimalScenario:  lastOptimalScenario  || null,
+        baselineSnapshot: hasCompare ? (lastBaselineSnapshot || null) : null,
+        optimalSnapshot:  hasCompare ? (lastOptimalSnapshot  || null) : null,
+        baselineScenario: hasCompare ? (lastBaselineScenario || null) : null,
+        optimalScenario:  hasCompare ? (lastOptimalScenario  || null) : null,
       };
     }
 
@@ -1334,8 +1333,14 @@ function snapshotForm(){
         applySpeedSelectionToLeg(i, true);
       });
 
-      calc(`<div class="highlight2">Profile loaded.</div>`);
-    }
+      if(snap.uiState){
+        importUIState(snap.uiState);
+      }else{
+        const actions = document.getElementById("compareActions");
+        if(actions) actions.style.display = "none";
+        calc(`<div class="highlight2">Profile loaded.</div>`);
+      }
+      }
 
     function refreshProfileList(){
       const list = document.getElementById("profileList");
@@ -1622,6 +1627,8 @@ function snapshotForm(){
      ***********************/
     let lastBaselineSnapshot = null;
     let lastOptimalSnapshot = null;
+    let lastBaselineScenario = null;
+    let lastOptimalScenario = null;
 
     function captureLegSnapshot(){
       const legCount = parseInt(safeText("legCount") || "1", 10);
@@ -1883,6 +1890,9 @@ function snapshotForm(){
 
       const baseScenario = scenarioFromSnapshot(lastBaselineSnapshot);
       const optScenario  = scenarioFromSnapshot(lastBaselineSnapshot, bestPerLeg);
+
+      lastBaselineScenario = baseScenario;
+      lastOptimalScenario  = optScenario;
 
       renderCompare(baseScenario, optScenario);
     }

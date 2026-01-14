@@ -1214,10 +1214,11 @@
         activeTabId: getActiveTabId(),
         resultsMode: hasCompare ? "compare" : "calc",
         compareActionsVisible,
-        baselineSnapshot: hasCompare ? (lastBaselineSnapshot || null) : null,
-        optimalSnapshot:  hasCompare ? (lastOptimalSnapshot  || null) : null,
-        baselineScenario: hasCompare ? (lastBaselineScenario || null) : null,
-        optimalScenario:  hasCompare ? (lastOptimalScenario  || null) : null,
+        // Save comparison state only if we have it
+        baselineSnapshot: lastBaselineSnapshot || null,
+        optimalSnapshot:  lastOptimalSnapshot  || null,
+        baselineScenario: lastBaselineScenario || null,
+        optimalScenario:  lastOptimalScenario  || null,
       };
     }
 
@@ -1290,13 +1291,23 @@ function snapshotForm(){
     function applySnapshot(snap){
       if(!snap || !snap.general) return;
 
-      // tables first
-      renderConsTable("normal",  snap.consTables?.normal  || []);
-      renderConsTable("light",   snap.consTables?.light   || []);
-      renderConsTable("towing",  snap.consTables?.towing  || []);
-      renderConsTable("ballast", snap.consTables?.ballast || []);
-      renderConsTable("laden",   snap.consTables?.laden   || []);
+      // tables (saved in profile; older profiles may not include them)
 
+      if(snap.consTables){
+
+        // tables first
+
+        renderConsTable("normal",  snap.consTables?.normal  || []);
+
+        renderConsTable("light",   snap.consTables?.light   || []);
+
+        renderConsTable("towing",  snap.consTables?.towing  || []);
+
+        renderConsTable("ballast", snap.consTables?.ballast || []);
+
+        renderConsTable("laden",   snap.consTables?.laden   || []);
+
+      }
       // general
       document.getElementById("vesselName").value = snap.general.vesselName || "";
       document.getElementById("vesselType").value = snap.general.vesselType || "Cargo vessel";
@@ -1333,14 +1344,8 @@ function snapshotForm(){
         applySpeedSelectionToLeg(i, true);
       });
 
-      if(snap.uiState){
-        importUIState(snap.uiState);
-      }else{
-        const actions = document.getElementById("compareActions");
-        if(actions) actions.style.display = "none";
-        calc(`<div class="highlight2">Profile loaded.</div>`);
-      }
-      }
+      calc(`<div class="highlight2">Profile loaded.</div>`);
+    }
 
     function refreshProfileList(){
       const list = document.getElementById("profileList");
@@ -1625,10 +1630,11 @@ function snapshotForm(){
     /***********************
      * Optimal comparison (does NOT change legs)
      ***********************/
+    let lastBaselineScenario = null;
+    let lastOptimalScenario  = null;
+
     let lastBaselineSnapshot = null;
     let lastOptimalSnapshot = null;
-    let lastBaselineScenario = null;
-    let lastOptimalScenario = null;
 
     function captureLegSnapshot(){
       const legCount = parseInt(safeText("legCount") || "1", 10);
